@@ -56,7 +56,16 @@ export const LESSONS=[
  {id:"r2",t:"Plus bis 10",calc:true,show:"4 + 5",op:"+",max:10,games:["sogehts","bildrechnen","rechnen"]},
  {id:"r3",t:"Minus bis 10",calc:true,show:"7 − 3",op:"-",max:10,games:["sogehts","bildrechnen","rechnen"]},
  {id:"r4",t:"Plus bis 20",calc:true,show:"13 + 4",op:"+",max:20,teen:true,games:["sogehts","bildrechnen","rechnen"]},
- {id:"r5",t:"Minus bis 20",calc:true,show:"17 − 5",op:"-",max:20,teen:true,games:["sogehts","bildrechnen","rechnen"]}
+ {id:"r5",t:"Minus bis 20",calc:true,show:"17 − 5",op:"-",max:20,teen:true,games:["sogehts","bildrechnen","rechnen"]},
+ /* Zehnerübergang: erst bis 10 auffüllen bzw. bis 10 zurück, dann der Rest */
+ {id:"r6",t:"Plus mit Zehnerübergang",calc:true,show:"8 + 5",op:"+",kind:"cross",games:["sogehts","bildrechnen","rechnen"]},
+ {id:"r7",t:"Minus mit Zehnerübergang",calc:true,show:"13 − 5",op:"-",kind:"cross",games:["sogehts","bildrechnen","rechnen"]},
+ /* bis 100: erst glatte Zehner, dann Zehner und Einer getrennt rechnen */
+ {id:"r8",t:"Rechnen mit Zehnern",calc:true,show:"30 + 40",ops:["+","-"],kind:"tens",games:["sogehts","bildrechnen","rechnen"]},
+ {id:"r9",t:"Plus und Minus bis 100",calc:true,show:"34 + 5",ops:["+","-"],kind:"h",games:["sogehts","bildrechnen","rechnen"]},
+ /* Einmaleins: erst die Kernreihen, dann alle; Mal als Gruppen mit gleich vielen */
+ {id:"r10",t:"Einmaleins: 2, 5 und 10",calc:true,show:"3 · 5",op:"·",kind:"mul",facs:[2,5,10],games:["sogehts","bildrechnen","rechnen"]},
+ {id:"r11",t:"Einmaleins: alle Reihen",calc:true,show:"7 · 8",op:"·",kind:"mul",facs:[2,3,4,5,6,7,8,9,10],games:["sogehts","bildrechnen","rechnen"]},
 ];
 LESSONS.forEach(x=>{if(!x.syl)return;x.words=x.words.map(([s,e])=>({segs:s.split("-"),w:s.replace(/-/g,""),e}));
  if(!x.cv)x.sylls=[...new Set(x.words.flatMap(w=>w.segs.map(s=>s.toUpperCase())))];

@@ -141,7 +141,7 @@ function home(){S.cur=null;window.speechSynthesis?.cancel();
  <section class="greet">${dino()}<div class="bubble"><h1>Hallo! Wer lernt heute mit mir?</h1><p>Tippe auf deinen Namen.</p></div></section>
  <div class="kids">${S.profiles.map(kidCard).join("")}</div>
  <p class="note">Lesen, Rechnen, Malen und Basteln · Alle Daten bleiben nur auf diesem Gerät.</p>`);
- app.querySelectorAll(".kid").forEach(b=>b.onclick=()=>{S.cur=b.dataset.id;save();menu()});
+ app.querySelectorAll(".kid").forEach(b=>b.onclick=()=>{S.cur=b.dataset.id;save();world()});
  const g=document.getElementById("gate");let t;
  const start=e=>{if(e.repeat)return;g.classList.add("holding");t=setTimeout(()=>{g.classList.remove("holding");adult()},2000)};
  const end=()=>{clearTimeout(t);g.classList.remove("holding")};
@@ -154,10 +154,9 @@ const doneCount=(p,L)=>{const g=lp(p,L),[a,b,c]=L.games;return (g[a]?1:0)+((g[b]
 const subj=x=>x.num||x.calc?"zahlen":"lesen";
 const isOpen=(p,i)=>{if(!p.sequential)return true;const x=LESSONS[i],prev=LESSONS.slice(0,i).reverse().find(y=>subj(y)===subj(x));return !prev||doneCount(p,prev)===3};
 const fmtL1=l=>P().caps?l:l.length>1?capL(l):l+l.toLowerCase();
-const CHAPTERS=[{t:"Buchstaben",d:"Laute hören und Buchstaben erkennen",s:"lesen"},{t:"Silben",d:"Silben lesen und Wörter bauen",s:"lesen"},
- {t:"Zahlen",d:"Zahlen bis 100 sehen, hören und erkennen",s:"zahlen"},{t:"Rechnen",d:"Plus und Minus – Schritt für Schritt erklärt",s:"zahlen"},
- {t:"Sätze",d:"Erste Sätze lesen und verstehen",s:"lesen"}];
-const SUBJECTS=[["lesen","📖 Lesen"],["zahlen","🔢 Zahlen & Rechnen"],["malen","🎨 Malen"],["basteln","✂️ Basteln"]];
+const CHAPTERS=[{i:"🔤",t:"Buchstaben",d:"Laute hören und Buchstaben erkennen",s:"lesen"},{i:"🧩",t:"Silben",d:"Silben lesen und Wörter bauen",s:"lesen"},
+ {i:"🔢",t:"Zahlen",d:"Zahlen bis 100 sehen, hören und erkennen",s:"zahlen"},{i:"➕",t:"Rechnen",d:"Plus, Minus und Mal – Schritt für Schritt erklärt",s:"zahlen"},
+ {i:"💬",t:"Sätze",d:"Erste Sätze lesen und verstehen",s:"lesen"}];
 const chOf=x=>x.sent?4:x.syl?1:x.num?2:x.calc?3:0;
 const lno=x=>LESSONS.filter(y=>chOf(y)===chOf(x)).indexOf(x)+1;
 const lname=x=>`${CHAPTERS[chOf(x)].t} · Lektion ${lno(x)}`;
@@ -165,26 +164,41 @@ const lglyph=x=>x.sent?fmtS(x.show):x.num||x.calc?x.show:x.syl?fmtSyl(x.show):x.
 const starSvg=(on,k=0)=>`<svg viewBox="0 0 24 24" aria-hidden="true" style="animation-delay:${k*.12}s"><path class="${on?"on":"off"}" d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg>`;
 const nextLesson=p=>LESSONS.find((x,i)=>subj(x)===p.subject&&isOpen(p,i)&&doneCount(p,x)<3);
 let L=null;
-function menu(){G=null;const p=P();L=null;if(p.subject==="malen")return malMenu();if(p.subject==="basteln")return bastelMenu();const nx=nextLesson(p);
- const chapter=(c,ci)=>{const ls=LESSONS.filter(x=>chOf(x)===ci),done=ls.filter(x=>doneCount(p,x)===3).length;
-  if(c.s!==p.subject)return "";const cn=CHAPTERS.filter(x=>x.s===c.s).indexOf(c)+1;
-  return `<section class="chapter c${ci+1}" aria-label="Kapitel ${cn}: ${c.t}">
-  <header class="chhead"><div class="badge">Kapitel ${cn}</div><h2>${c.t}</h2><p>${c.d}</p>
-  <div class="pbar" role="img" aria-label="${done} von ${ls.length} Lektionen geschafft"><i style="width:${done/ls.length*100}%"></i></div>
-  <span class="pcount">${done} von ${ls.length} Lektionen geschafft</span></header>
-  <div class="path">${ls.map(x=>{const i=LESSONS.indexOf(x),d=doneCount(p,x),o=isOpen(p,i),cur=x===nx;
+/* ---------- Kinder-Navigation: Start → Was machen wir heute? → Fach → Lektion → Übung ---------- */
+const WORLDS=[{k:"lesen",i:"📖",t:"Lesen"},{k:"zahlen",i:"🔢",t:"Rechnen"},{k:"malen",i:"🎨",t:"Malen"},{k:"basteln",i:"✂️",t:"Basteln"}];
+/* Kopfleiste für alle Kinder-Seiten: großer Zurück-Knopf, Titel, Sticker-Album */
+const kidBar=(back,backSay,title,album=true)=>`<div class="bar kidbar">${T("backbtn",backSay,`<span aria-hidden="true">◀</span> Zurück`,`id="${back}"`)}<div class="grow"><h1 class="hi">${title}</h1></div>${album?albumBtn(P()):""}</div>`;
+const stepDone=(p,x,k)=>{const g=lp(p,x);return k===x.games[0]?!!g[k]:(g[k]||0)>=3};
+const nextStep=(p,x)=>x.games.find(k=>!stepDone(p,x,k))||x.games[0];
+/* nächste Übung für den großen Weiter-Knopf */
+function nextUp(p,subject){const s=subject==="zahlen"?"zahlen":"lesen";const x=LESSONS.find((y,i)=>subj(y)===s&&isOpen(p,i)&&doneCount(p,y)<3);return x?{x,k:nextStep(p,x)}:null}
+function goNext(n){const p=P();p.subject=subj(n.x);save();L=n.x;start(n.k)}
+const weiterBtn=n=>n?T("primary weiter",`Weiter: ${CHAPTERS[chOf(n.x)].t}`,`<span class="wplay" aria-hidden="true">▶</span><span class="wtxt"><b>Weiter</b><span>${CHAPTERS[chOf(n.x)].i} ${CHAPTERS[chOf(n.x)].t} · <span class="wgl">${lglyph(n.x)}</span></span></span>`,'id="weiter"'):"";
+function world(){G=null;L=null;const p=P();const n=nextUp(p,p.subject);
+ const stars=s=>LESSONS.filter(x=>subj(x)===s).reduce((a,x)=>a+doneCount(p,x),0);
+ view(`${kidBar("home","Zurück zur Startseite",`${p.face} ${esc(p.name)}`)}
+ <section class="greet small">${dino()}<div class="bubble"><h1>Was machen wir heute?</h1></div></section>
+ ${weiterBtn(n)}
+ <div class="worlds">${WORLDS.map(w=>T(`world w-${w.k}`,w.t,`<span class="wi" aria-hidden="true">${w.i}</span><b>${w.t}</b>${w.k==="lesen"||w.k==="zahlen"?`<span class="kstars">${starSvg(true)}<b>${stars(w.k)}</b></span>`:""}`,`data-w="${w.k}"`)).join("")}</div>`,true);
+ Speech.say(`Hallo ${p.name}! Was machen wir heute?`);Input.refresh();
+ bind("home",home);bind("album",()=>album(world));bind("weiter",()=>goNext(n));
+ app.querySelectorAll("[data-w]").forEach(b=>b.onclick=()=>{p.subject=b.dataset.w;save();menu()})}
+function menu(){G=null;const p=P();L=null;if(p.subject==="malen")return malMenu();if(p.subject==="basteln")return bastelMenu();
+ const n=nextUp(p,p.subject),w=WORLDS.find(x=>x.k===p.subject);
+ const chapter=(c,ci)=>{if(c.s!==p.subject)return "";const ls=LESSONS.filter(x=>chOf(x)===ci),done=ls.filter(x=>doneCount(p,x)===3).length;
+  return `<section class="chapter c${ci+1}" aria-label="${c.t}">
+  <h2 class="chtitle"><span aria-hidden="true">${c.i}</span> ${c.t} <span class="pcount">${done} / ${ls.length}</span></h2>
+  <div class="ltiles">${ls.map(x=>{const i=LESSONS.indexOf(x),d=doneCount(p,x),o=isOpen(p,i),cur=n&&x===n.x;
    const st=d===3?"done":!o?"locked":cur?"current":"open";
-   return T(`lesson ${st}`,`Lektion ${lno(x)}: ${x.t}${o?"":", noch gesperrt"}`,
-   `<span class="medal" aria-hidden="true">${st==="done"?"✓":st==="locked"?"🔒":lno(x)}</span>
-    <span class="lbody"><span class="ll">${lglyph(x)}</span><b>${x.t}</b>${cur?'<span class="chip">Hier geht es weiter</span>':""}</span>
-    <span class="lstars" aria-label="${d} von 3 Sternen">${[0,1,2].map(k=>starSvg(k<d)).join("")}</span>`,
+   return T(`ltile ${st}`,`Lektion ${lno(x)}: ${x.t}${o?"":", noch gesperrt"}`,
+   `<span class="ltg" aria-hidden="true">${st==="locked"?"🔒":lglyph(x)}</span><span class="lstars" aria-label="${d} von 3 Sternen">${[0,1,2].map(k=>starSvg(k<d)).join("")}</span><span class="ltt">${x.t}</span>`,
    `data-i="${i}" ${o?"":"disabled"}`)}).join("")}</div></section>`};
- view(`<div class="bar">${T("","Zurück zur Startseite","⌂ Start",'id="home"')}<div class="grow"><h1 class="hi">${p.face} Hallo ${esc(p.name)}!</h1></div>${albumBtn(p)}</div>
- ${subjBar(p)}
+ view(`${kidBar("back","Zurück",`${w.i} ${w.t}`)}
+ ${weiterBtn(n)}
  <div class="chapters">${CHAPTERS.map(chapter).join("")}</div>`,true);
- Speech.say(`Hallo! Welche Lektion möchtest du machen?`);Input.refresh();
- bindSubj(p);
- bind("home",home);bind("album",()=>album(menu));app.querySelectorAll("[data-i]").forEach(b=>b.onclick=()=>{L=LESSONS[+b.dataset.i];lesson()})}
+ Speech.say(`${w.t}. Welche Lektion möchtest du machen?`);Input.refresh();
+ bind("back",world);bind("album",()=>album(menu));bind("weiter",()=>goNext(n));
+ app.querySelectorAll("[data-i]").forEach(b=>b.onclick=()=>{L=LESSONS[+b.dataset.i];lesson()})}
 
 function lesson(){G=null;const p=P(),g=lp(p,L),ci=chOf(L);
  const st=k=>k===L.games[0]?(g[k]?"✓ geschafft":"Noch nicht gemacht"):(g[k]!=null?`✓ Bestes Ergebnis: ${g[k]} von ${ROUND}`:"Noch nicht gemacht");
@@ -194,15 +208,11 @@ function lesson(){G=null;const p=P(),g=lp(p,L),ci=chOf(L);
  else if(L.sent){glyph={satzlesen:"📖",satzbild:L.items[0].e,luecke:"…?"}}
  else if(L.syl){glyph={silben:fmtSyl(L.sylls[0]),hoeren:"👂",bauen:L.words[0].e}}
  else{const w0=WORDS.find(w=>w.l===L.ls[0]);glyph={entdecken:fmtL(L.ls[0]),anlaut:emo(w0.e),wortbild:fmt(w0.w)}}
- const stepName=["Kennenlernen","Üben","Anwenden"];
- view(`<div class="bar">${T("","Zurück zu den Lektionen","◀ Lektionen",'id="back"')}</div>
- <header class="lhead c${ci+1}"><div><div class="badge">${lname(L)}</div><h1 class="hi">${L.t}</h1></div>
- <div class="lbig" aria-hidden="true">${lglyph(L)}</div>
- <div class="lstars big" aria-label="${doneCount(p,L)} von 3 Sternen">${[0,1,2].map(k=>starSvg(k<doneCount(p,L))).join("")}</div></header>
- <div class="steps c${ci+1}">${L.games.map((k,n)=>{const x=GAMES[k];
-  return T(`step${ok(k)?" done":""}${k===nextStep?" next":""}`,`Schritt ${n+1}: ${x.t}`,
-  `<span class="snum" aria-hidden="true">${ok(k)?"✓":n+1}</span><span class="badge">Schritt ${n+1} · ${stepName[n]}</span>
-   <span class="gl" aria-hidden="true">${glyph[k]}</span><b>${x.t}</b><span class="sd">${x.d}</span><span class="sst">${st(k)}</span>`,`data-g="${k}"`)}).join("")}</div>`,true);
+ const icons=["👀","✏️","⭐"];
+ view(`${kidBar("back","Zurück zu den Lektionen",`<span class="lbig c${ci+1}">${lglyph(L)}</span>`)}
+ <div class="steps c${ci+1}">${L.games.map((k,n)=>{const x=GAMES[k],d=ok(k);
+  return T(`step${d?" done":""}${k===nextStep?" next":""}`,`Schritt ${n+1}: ${x.t}`,
+  `<span class="snum" aria-hidden="true">${d?"✓":n+1}</span><span class="gl" aria-hidden="true">${glyph[k]}</span><b>${x.t}</b>${k===nextStep?'<span class="go" aria-hidden="true">▶ Los</span>':""}`,`data-g="${k}"`)}).join("")}</div>`,true);
  Speech.say(L.review?`Lektion ${lno(L)}. Wir wiederholen alle Buchstaben.`:`Lektion ${lno(L)}. ${L.t}.`);Input.refresh();
  bind("back",menu);app.querySelectorAll("[data-g]").forEach(b=>b.onclick=()=>start(b.dataset.g))}
 
@@ -397,16 +407,24 @@ function taskBauen(first){const p=P(),t=G.tasks[G.i];
 
 /* ---------- Zahlen & Rechnen ---------- */
 const zw=n=>n===1?"ein":String(n);
-const sayEq=(t,withRes)=>`${t.a} ${t.op==="+"?"plus":"minus"} ${t.b}${withRes?` ist ${res(t)}`:""}`;
-const res=t=>t.op==="+"?t.a+t.b:t.a-t.b;
-const showEq=(t,r)=>`${t.a} ${t.op==="+"?"+":"−"} ${t.b} = ${r===undefined?'<span class="q">?</span>':r}`;
+const opWord=op=>op==="+"?"plus":op==="-"?"minus":"mal";
+const opSym=op=>op==="+"?"+":op==="-"?"−":"·";
+const sayEq=(t,withRes)=>`${t.a} ${opWord(t.op)} ${t.b}${withRes?` ist ${res(t)}`:""}`;
+const res=t=>t.op==="+"?t.a+t.b:t.op==="-"?t.a-t.b:t.a*t.b;
+const showEq=(t,r)=>`${t.a} ${opSym(t.op)} ${t.b} = ${r===undefined?'<span class="q">?</span>':r}`;
 /* Zehnerfeld (2 × 5, "Kraft der Fünf"); bis 20 zwei Felder */
 function frames(cells,split){const nf=Math.max(1,Math.ceil(cells.length/10));let h="";
  for(let f=0;f<nf;f++){h+=`<div class="frame${split&&f===0?" ten":""}">`;for(let k=0;k<10;k++){const c=cells[f*10+k];h+=`<span class="cell">${c?`<i class="dot ${c}"></i>`:""}</span>`}h+="</div>"}
  return `<div class="frames" aria-hidden="true">${h}</div>`}
 /* ab 21: Zehnerstangen und Einerwürfel */
-function rods(n){const t=Math.floor(n/10),u=n%10;
- return `<div class="rods" aria-hidden="true">${Array.from({length:t},()=>`<span class="rod">${"<i></i>".repeat(10)}</span>`).join("")}${u?`<span class="units">${"<i></i>".repeat(u)}</span>`:""}</div>`}
+function rods(n,goneT=0,goneU=0){const t=Math.floor(n/10),u=n%10;
+ return `<div class="rods" aria-hidden="true">${Array.from({length:t},(_,k)=>`<span class="rod${k>=t-goneT?" gone":""}">${"<i></i>".repeat(10)}</span>`).join("")}${u?`<span class="units">${Array.from({length:u},(_,k)=>`<i${k>=u-goneU?' class="gone"':""}></i>`).join("")}</span>`:""}</div>`}
+/* Einmaleins: a Gruppen mit je b Punkten */
+const groups=(a,b)=>`<div class="groups" style="--gs:${Math.max(a,b)>=8?12:Math.max(a,b)>=6?15:20}px" aria-hidden="true">${Array.from({length:a},()=>`<span class="grp">${"<i></i>".repeat(b)}</span>`).join("")}</div>`;
+/* Bild zu einer Aufgabe: Zehnerfeld bis 20, darüber Stangen und Würfel, beim Mal Gruppen */
+function calcPic(t){if(t.op==="·")return groups(t.a,t.b);
+ if(t.a<=20&&t.b<=20)return frames(t.op==="+"?[...Array(t.a).fill("d1"),...Array(t.b).fill("d2")]:[...Array(t.a-t.b).fill("d1"),...Array(t.b).fill("gone")]);
+ return t.op==="+"?`<div class="rodsum">${rods(t.a)}<span class="plus">+</span>${rods(t.b)}</div>`:rods(t.a,Math.floor(t.b/10),t.b%10)}
 const qty=n=>n<=20?frames(Array(n).fill("d1")):rods(n);
 const zeText=n=>{const z=Math.floor(n/10),u=n%10;return n<10?"":n===100?"10 Zehner":`${z} Zehner${u?` · ${u} Einer`:""}`};
 const zeSay=n=>{const z=Math.floor(n/10),u=n%10;return n<10?"":n===100?"10 Zehner.":`${zw(z)} Zehner${u?` und ${zw(u)} Einer`:""}.`.replace(/^./,c=>c.toUpperCase())};
@@ -417,15 +435,41 @@ function numOpts(n,count,lo,hi){const c=[];const add=v=>{if(v!==n&&v>=0&&v<=100&
  const r=reverse(n);if(r!==null)add(r);[1,-1,2,-2,10,-10,3,-3].forEach(d=>add(n+d));
  const near=c.filter(v=>v>=lo-2&&v<=hi+2);return shuffle([n,...(near.length>=count-1?near:c).slice(0,count-1)])}
 function calcOpts(t,count){const r=res(t),c=[];const add=v=>{if(v!==r&&v>=0&&!c.includes(v))c.push(v)};
- if(t.op==="-")add(t.a+t.b);[1,-1,2,-2,3].forEach(d=>add(r+d));return shuffle([r,...c.slice(0,count-1)])}
-function genCalc(L){let a,b;
+ if(t.op==="-")add(t.a+t.b);if(t.op==="·"){add(r+t.b);add(r-t.b);add(t.a+t.b)}if(t.b>=10&&t.op!=="·"){add(r+10);add(r-10)}[1,-1,2,-2,3].forEach(d=>add(r+d));return shuffle([r,...c.slice(0,count-1)])}
+function genCalc(L){let a,b;const op=L.ops?L.ops[rnd(0,L.ops.length-1)]:L.op;
+ if(L.kind==="cross"){if(op==="+"){a=rnd(2,9);b=rnd(11-a,9)}else{a=rnd(11,18);b=rnd(a-9,9);if(b<=a-10)b=a-9}return {a,b,op}}
+ if(L.kind==="tens"){if(op==="+"){a=10*rnd(1,8);b=10*rnd(1,9-a/10)}else{a=10*rnd(2,9);b=10*rnd(1,a/10-1)}return {a,b,op}}
+ if(L.kind==="h"){const z=rnd(2,8),u=rnd(1,8),k=rnd(0,2);a=10*z+u;
+  if(k===2&&op==="+")b=10*rnd(1,9-z);else if(op==="+")b=rnd(1,9-u);else if(k===2)b=10*rnd(1,z-1);else{a=10*z+rnd(2,9);b=rnd(1,a%10-1)}return {a,b,op}}
+ if(L.kind==="mul"){b=L.facs[rnd(0,L.facs.length-1)];a=rnd(1,10);return {a,b,op:"·"}}
  if(L.op==="+"){if(L.teen){const u=rnd(1,8);a=10+u;b=rnd(1,9-u)}else{a=rnd(1,L.max-1);b=rnd(1,L.max-a)}}
  else{if(L.teen){const u=rnd(2,9);a=10+u;b=rnd(1,u)}else{a=rnd(2,L.max);b=rnd(1,a-1)}}
  return {a,b,op:L.op}}
 function calcTasks(L,n){const out=[],seen=new Set();let guard=0;while(out.length<n&&guard++<200){const t=genCalc(L),k=t.a+t.op+t.b;if(!seen.has(k)){seen.add(k);out.push(t)}}return out}
 
 /* Schritte einer Erklärung: Menge zeigen, dazu-/wegnehmen, bei Zahlen über 10 in Zehner und Einer zerlegen */
-function calcSteps(t){const {a,b}=t,r=res(t),s=[],A=Array(a).fill("d1");
+function calcSteps(t){const {a,b}=t,r=res(t),s=[],A=Array(a).fill("d1"),z=n=>Math.floor(n/10),e=n=>n%10,zw1=n=>n===1?"ein":String(n);
+ if(t.op==="·"){const seq=Array.from({length:a},(_,k)=>(k+1)*b).join(", ");
+  s.push({html:groups(a,b),eq:`${a} · ${b}`,say:a===1?`1 mal ${b} heißt: eine Gruppe mit ${b}.`:`${a} mal ${b} heißt: ${a} Gruppen mit je ${b}.`});
+  s.push({html:groups(a,b),eq:`${a} · ${b}`,say:`Wir zählen immer ${b} weiter: ${seq}.`});
+  s.push({html:groups(a,b),eq:`${a} · ${b} = ${r}`,say:`Also ist ${a} mal ${b} gleich ${r}.`});return s}
+ if(a>20||b>20||r>20){const tens=b%10===0;
+  s.push({html:rods(a),eq:`${a}`,say:e(a)?`${a} sind ${zw1(z(a))} Zehner und ${zw1(e(a))} Einer.`:`${a} sind ${zw1(z(a))} Zehner.`});
+  if(t.op==="+"){s.push({html:`<div class="rodsum">${rods(a)}<span class="plus">+</span>${rods(b)}</div>`,eq:`${a} + ${b}`,say:tens?(z(b)===1?"Dazu kommt ein Zehner.":`Dazu kommen ${z(b)} Zehner.`):(b===1?"Dazu kommt ein Einer.":`Dazu kommen ${b} Einer.`)});
+   s.push({html:rods(r),eq:`${a} + ${b}`,say:tens?`${z(a)} Zehner plus ${z(b)} Zehner sind ${z(r)} Zehner.`:`${e(a)} Einer plus ${b} Einer sind ${e(r)} Einer.`})}
+  else{s.push({html:rods(a,z(b)*(tens?1:0),tens?0:b),eq:`${a} − ${b}`,say:tens?(z(b)===1?"Wir nehmen einen Zehner weg.":`Wir nehmen ${z(b)} Zehner weg.`):(b===1?"Wir nehmen einen Einer weg.":`Wir nehmen ${b} Einer weg.`)});
+   s.push({html:rods(r),eq:`${a} − ${b}`,say:tens?`${z(a)} Zehner minus ${z(b)} Zehner sind ${z(r)} Zehner.`:`${e(a)} Einer minus ${b} Einer ${e(r)===1?"ist ein Einer":`sind ${e(r)} Einer`}.`})}
+  s.push({html:rods(r),eq:showEq(t,r).replace(/<[^>]+>/g,""),say:`Also ist ${sayEq(t)} gleich ${r}.`});return s}
+ if(t.op==="+"&&a<10&&r>10){const f=10-a,rest=b-f,C=[...A,...Array(b).fill("d2")];
+  s.push({cells:A,eq:`${a}`,say:`Das sind ${a}.`});
+  s.push({cells:[...A,...Array(f).fill("d2")],split:1,eq:`${a} + ${f} = 10`,say:`Wir füllen bis 10 auf: ${a} plus ${f} sind 10.`});
+  s.push({cells:C,split:1,eq:`10 + ${rest}`,say:`${b} sind ${f} und ${rest}. Dann kommen noch ${rest} dazu.`});
+  s.push({cells:C,split:1,eq:`${a} + ${b} = ${r}`,say:`10 und ${rest} sind ${r}. Also ist ${a} plus ${b} gleich ${r}.`});return s}
+ if(t.op==="-"&&a>10&&r<10){const u=a-10,rest=b-u;
+  s.push({cells:A,eq:`${a}`,say:`Das sind ${a}.`});
+  s.push({cells:[...Array(10).fill("d1"),...Array(u).fill("gone")],split:1,eq:`${a} − ${u} = 10`,say:`Erst bis 10: ${a} minus ${u} sind 10.`});
+  s.push({cells:[...Array(r).fill("d1"),...Array(b).fill("gone")],split:1,eq:`10 − ${rest}`,say:`${b} sind ${u} und ${rest}. Dann nehmen wir noch ${rest} weg.`});
+  s.push({cells:[...Array(r).fill("d1"),...Array(b).fill("gone")],split:1,eq:`${a} − ${b} = ${r}`,say:`Also ist ${a} minus ${b} gleich ${r}.`});return s}
  if(t.op==="+"){const C=[...A,...Array(b).fill("d2")];
   s.push({cells:A,eq:`${a}`,say:a===1?"Das ist einer.":`Das sind ${a}.`});
   s.push({cells:C,eq:`${a} + ${b}`,say:b===1?"Dazu kommt noch einer.":`Dazu kommen ${b}.`});
@@ -441,7 +485,7 @@ function calcSteps(t){const {a,b}=t,r=res(t),s=[],A=Array(a).fill("d1");
  return s}
 function explainRun(t,box){const my=++Speech.gen;const steps=calcSteps(t);
  const run=(async()=>{for(const st of steps){if(Speech.gen!==my)return;
-  box.innerHTML=`<div class="eqline">${st.eq}</div>${frames(st.cells,st.split)}<p class="say">${st.say}</p>`;
+  box.innerHTML=`<div class="eqline">${st.eq}</div>${st.html||frames(st.cells,st.split)}<p class="say">${st.say}</p>`;
   await Speech.say(st.say,{keep:true});await wait((P()&&P().tts)?350:1800)}})();
  Speech.current=run;return run}
 
@@ -492,7 +536,7 @@ function discoverCalc(){const t=G.pages[G.i];
  bind("next",()=>{if(G.i<G.pages.length-1){G.i++;discoverCalc()}else{const p=P();(p.prog[L.id]=p.prog[L.id]||{}).sogehts=1;save();result(1,1,"Du kennst jetzt den Rechenweg!")}})}
 
 function taskCalc(){const p=P(),t=G.tasks[G.i],r=res(t);G.wrong=0;const n=Math.min(p.choices,4);const opts=calcOpts(t,n);
- const pic=G.type==="bildrechnen"?frames(t.op==="+"?[...Array(t.a).fill("d1"),...Array(t.b).fill("d2")]:[...Array(t.a-t.b).fill("d1"),...Array(t.b).fill("gone")]):"";
+ const pic=G.type==="bildrechnen"?calcPic(t):"";
  const say=`Wie viel ist ${sayEq(t)}?`;
  view(`${topbar(dotsN(G.tasks.length,G.i))}<div class="stage"><div class="prompt explain" id="ex"><div class="eqline big" id="eq">${showEq(t)}</div>${pic}</div>
  <div class="choices" style="--n:${n}">${opts.map(v=>T("choice num",String(v),String(v),`data-v="${v}" aria-label="${v}"`)).join("")}</div>
@@ -502,7 +546,7 @@ function taskCalc(){const p=P(),t=G.tasks[G.i],r=res(t);G.wrong=0;const n=Math.m
  app.querySelectorAll(".choice").forEach(b=>b.onclick=async()=>{const myG=G;const fb=document.getElementById("fb"),v=+b.dataset.v;
   if(v===r){Input.pause(true);b.classList.add("right");track("R:"+L.id+":"+t.a+t.op+t.b,!G.wrong);if(!G.wrong)G.ok++;app.querySelectorAll(".choice").forEach(x=>x.disabled=true);
    const eq=document.getElementById("eq");if(eq)eq.innerHTML=showEq(t,r);
-   const msg=PRAISE[Math.random()*PRAISE.length|0];fb.className="feedback ok";fb.textContent=`${msg} ${t.a} ${t.op==="+"?"+":"−"} ${t.b} = ${r}`;
+   const msg=PRAISE[Math.random()*PRAISE.length|0];fb.className="feedback ok";fb.textContent=`${msg} ${t.a} ${opSym(t.op)} ${t.b} = ${r}`;
    await Speech.say(`${msg} ${sayEq(t,true)}.`);await wait(500);if(G!==myG)return;G.i++;G.i<G.tasks.length?taskCalc():finish()}
   else{G.wrong++;b.classList.add("wrong");b.disabled=true;fb.className="feedback no";fb.textContent="Noch nicht. Ich erkläre es dir.";Input.pause(true);
    await Speech.say("Noch nicht. Ich erkläre es dir.");await explainRun(t,document.getElementById("ex"));if(G!==myG)return;
@@ -541,20 +585,16 @@ async function prepMotif(m){if(m.prep)return m.prep;
   return {px:r.px,ax:best%PSZ,ay:(best/PSZ)|0}});
  return (m.prep={c,lab,regs:out})}
 let PM=null;
-function subjBar(p){return `<div class="subjects" role="group" aria-label="Fach">${SUBJECTS.map(([k,l])=>T("subj"+(p.subject===k?" on":""),l.replace(/^\S+ /,""),l,`data-s="${k}" aria-pressed="${p.subject===k}"`)).join("")}</div>`}
-function bindSubj(p){app.querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{p.subject=b.dataset.s;save();menu()})}
 function malMenu(){const p=P();PM=null;const scan=Input.mode().startsWith("scan");
- view(`<div class="bar">${T("","Zurück zur Startseite","⌂ Start",'id="home"')}<div class="grow"><h1 class="hi">${p.face} Hallo ${esc(p.name)}!</h1></div>${albumBtn(p)}</div>
- ${subjBar(p)}
+ view(`${kidBar("home","Zurück","🎨 Malen")}
  <div class="chapters malen">${BOOKS.list.filter(bk=>bk.app).map(bk=>{const ms=MOTIFS.filter(m=>m.books.includes(bk.id));if(!ms.length)return "";
-  return `<section class="chapter c5" aria-label="${bk.app}"><header class="chhead"><div class="badge">Aus dem Malbuch „${bk.t}“</div><h2>${bk.app}</h2><p>Farbe wählen und auf eine Fläche tippen</p></header>
+  return `<section class="chapter c5" aria-label="${bk.app}"><h2 class="chtitle">${bk.app}</h2>
  <div class="motifs">${ms.map(m=>T("motif",m.w,`<span class="mthumb" aria-hidden="true"><img src="${m.src}" alt=""></span><b>${m.w}</b>${m.l&&bk.id==="lernen"?`<span class="ml">${fmtL1(m.l)} wie ${m.w}</span>`:""}<span class="lvl l${m.lvl}">${LVL[m.lvl]}</span>${p.paint&&p.paint[m.id]?'<span class="chip">angefangen</span>':""}`,`data-m="${m.id}"`)).join("")}</div></section>`}).join("")}
- <section class="chapter c5" aria-label="Freies Malen und meine Bilder"><header class="chhead"><div class="badge">Selbst malen</div><h2>Freies Malen</h2><p>${scan?"Freies Malen geht mit Tippen oder Maus. Mit Tasten lieber Bilder ausmalen.":"Mit dem Finger oder der Maus malen"}</p></header>
+ <section class="chapter c5" aria-label="Freies Malen und meine Bilder"><h2 class="chtitle">Freies Malen</h2>
  <div class="motifs">${T("motif",`Freies Malen`,`<span class="mthumb big" aria-hidden="true">🖌️</span><b>Leeres Blatt</b>`,`id="free" ${scan?"disabled":""}`)}</div>
- <header class="chhead"><h2>Meine Bilder</h2><p>${p.gallery.length?`${p.gallery.length} ${p.gallery.length===1?"Bild":"Bilder"}`:"Hier erscheinen deine fertigen Bilder."}</p></header>
- <div class="gallery">${p.gallery.map((g,i)=>T("gpic",`Mein Bild ${i+1}`,`<img src="${g.img}" alt="">`,`data-g="${i}"`)).join("")}</div>
- <p class="note books">📚 ${BOOKS.hint}</p></section></div>`,true);
- Speech.say("Was möchtest du malen?");Input.refresh();bindSubj(p);bind("home",home);bind("album",()=>album(menu));bind("free",freePaint);
+ ${p.gallery.length?'<h2 class="chtitle">Meine Bilder</h2>':""}
+ <div class="gallery">${p.gallery.map((g,i)=>T("gpic",`Mein Bild ${i+1}`,`<img src="${g.img}" alt="">`,`data-g="${i}"`)).join("")}</div></section></div>`,true);
+ Speech.say("Was möchtest du malen?");Input.refresh();bind("home",world);bind("album",()=>album(menu));bind("free",freePaint);
  app.querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>paintOpen(MOTIFS.find(m=>m.id===b.dataset.m),malMenu));
  app.querySelectorAll("[data-g]").forEach(b=>b.onclick=()=>showPic(+b.dataset.g))}
 async function paintOpen(m,ret){const p=P();const prep=await prepMotif(m);const sv=p.paint&&p.paint[m.id];
@@ -596,8 +636,7 @@ function paintDone(){const img=snapshot();if(!PM.free&&!PM.cols.some(Boolean)){S
  addGallery(img,PM.free?"frei":PM.m.id);const m=PM.m,free=PM.free,ret=PM.ret;
  const got=giveSticker(P(),free?"frei:"+new Date().toDateString():"p:"+m.id,free?[]:[m.id]);
  view(`<div class="result"><h2>Toll gemalt!</h2>${got?newSticker(got,true):""}<img class="donepic" src="${img}" alt="Dein fertiges Bild">
- <div class="rowbtns">${T("primary","Weiter malen","🎨 Weiter malen",'id="more"')}${T("","Drucken","🖨️ Drucken",'id="print"')}${T("","Zur Bildauswahl","Zur Bildauswahl",'id="menu"')}</div>
- <p class="note books">📚 ${BOOKS.hint}</p></div>`,true);
+ <div class="rowbtns">${T("primary","Weiter malen","🎨 Weiter malen",'id="more"')}${T("","Drucken","🖨️ Drucken",'id="print"')}${T("","Zur Bildauswahl","Zur Bildauswahl",'id="menu"')}</div></div>`,true);
  Speech.say(got?`Toll gemalt! Du bekommst einen Sticker: ${got.w}.`:"Toll gemalt!");Input.refresh();
  bind("more",()=>free?freePaint():paintOpen(m,ret));bind("print",()=>printImg(img,free?"Mein Bild":m.w));bind("menu",malMenu)}
 function showPic(i){const p=P(),g=p.gallery[i];if(!g)return malMenu();
@@ -646,15 +685,13 @@ async function hydrateCrops(){for(const el of app.querySelectorAll("img.crop:not
  el.src=_cr[key]}}
 const craftBook=()=>BOOKS.list.find(b=>b.id===(CR.book||"einfach"));
 function bastelMenu(){const p=P();p.craft=p.craft||{};const bk=craftBook();
- view(`<div class="bar">${T("","Zurück zur Startseite","⌂ Start",'id="home"')}<div class="grow"><h1 class="hi">${p.face} Hallo ${esc(p.name)}!</h1></div>${albumBtn(p)}</div>
- ${subjBar(p)}
- <div class="chapters malen"><section class="chapter c6" aria-label="Basteln"><header class="chhead"><div class="badge">Aus dem Buch „${bk.t}“</div><h2>Basteln</h2><p>Schritt für Schritt: malen, schneiden, kleben</p></header>
+ view(`${kidBar("home","Zurück","✂️ Basteln")}
+ <div class="chapters malen"><section class="chapter c6" aria-label="Basteln">
  <div class="motifs">${CR.list.map(c=>{const st=p.craft[c.id];return T("motif",c.t,`<span class="mthumb">${cropImg(c.thumb)}</span><b>${c.t}</b><span class="stufe">${"●".repeat(c.lvl)}${"○".repeat(2-c.lvl)} Stufe ${c.lvl}</span>${st&&st.done?'<span class="chip okc">✓ geschafft</span>':st&&st.i?`<span class="chip">Schritt ${st.i+1} von ${c.steps.length}</span>`:""}`,`data-k="${c.id}"`)}).join("")}</div></section>
- <section class="chapter c6" aria-label="Hinweise"><header class="chhead"><div class="badge">So geht das Basteln</div><h2>Die Zeichen</h2></header>
+ <section class="chapter c6" aria-label="Die Zeichen"><h2 class="chtitle">Die Zeichen</h2>
  <ul class="need">${["stift","schere","kleber","haken"].map(t=>`<li><span class="tool">${TOOL_SVG[t]}</span>${{stift:"Male das Bild an.",schere:"Schneide auf der Linie aus.",kleber:"Klebe das Teil auf.",haken:"Ich bin fertig."}[t]}</li>`).join("")}</ul>
- <p class="note">Für Erwachsene: Den Bastelbogen vorher ausdrucken, nur einseitig. Für Kinder eine Schere mit runder Spitze nehmen.</p>
- <p class="note books">📚 ${BOOKS.hint}</p></section></div>`,true);
- hydrateCrops();Speech.say("Was möchtest du basteln?");Input.refresh();bindSubj(p);bind("home",home);bind("album",()=>album(menu));
+ </section></div>`,true);
+ hydrateCrops();Speech.say("Was möchtest du basteln?");Input.refresh();bind("home",world);bind("album",()=>album(menu));
  app.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>craftIntro(CR.list.find(c=>c.id===b.dataset.k)))}
 function craftIntro(c){const st=P().craft[c.id]||{};const need=c.need.map(t=>t==="bogen"&&c.pages.length>1?`${c.pages.length} Bastelbögen`:TOOL_NAME[t]);
  view(`<div class="bar">${T("","Zurück zum Basteln","◀ Basteln",'id="back"')}<div class="grow"><h1 class="hi">${c.t}</h1></div></div>
@@ -677,8 +714,7 @@ function craftStep(c,i){const s=c.steps[i],p=P();p.craft[c.id]={...(p.craft[c.id
 function craftDone(c){const p=P();p.craft[c.id]={i:0,done:true};save();const got=giveSticker(p,"c:"+c.id,[]);
  view(`<div class="result">${got?newSticker(got,true):""}<h2>Du hast es geschafft!</h2><div class="stars" role="img" aria-label="3 Sterne">${[0,1,2].map(k=>starSvg(true,k)).join("")}</div>
  <div class="cdone">${cropImg(c.steps[c.steps.length-1].img)}</div>
- <div class="rowbtns">${T("primary","Noch etwas basteln","✂️ Noch etwas basteln",'id="menu"')}${T("","Nochmal von vorn","↻ Nochmal",'id="again2"')}</div>
- <p class="note books">📚 ${BOOKS.hint}</p></div>`,true);
+ <div class="rowbtns">${T("primary","Noch etwas basteln","✂️ Noch etwas basteln",'id="menu"')}${T("","Nochmal von vorn","↻ Nochmal",'id="again2"')}</div></div>`,true);
  hydrateCrops();Speech.say(got?`Du hast es geschafft! Du bekommst einen Sticker: ${got.w}.`:"Du hast es geschafft! Toll gemacht.");Input.refresh();bind("menu",bastelMenu);bind("again2",()=>craftStep(c,0))}
 function printPages(srcs){let pr=document.getElementById("print-area");if(!pr){pr=document.createElement("div");pr.id="print-area";document.body.appendChild(pr)}
  pr.innerHTML=srcs.map(s=>`<div class="ppage"><img src="${s}" alt=""></div>`).join("");
@@ -699,7 +735,7 @@ function lernstand(p){const it=p.items||{};
  const dec=[...Array(10)].map((_,d)=>[d*10,d*10+9]);
  const calcL=LESSONS.filter(x=>x.calc);
  const pretty=k=>{const [t,...r]=k.split(":");const v=r.join(":");
-  return t==="T"?`Satz „${v}“`:t==="B"?`Buchstabe ${v}`:t==="S"?`Silbe ${v}`:t==="W"?`Wort „${v}“`:t==="Z"?`Zahl ${v}`:t==="R"?`Aufgabe ${v.split(":")[1].replace(/([+-])/," $1 ").replace("-","−")}`:k};
+  return t==="T"?`Satz „${v}“`:t==="B"?`Buchstabe ${v}`:t==="S"?`Silbe ${v}`:t==="W"?`Wort „${v}“`:t==="Z"?`Zahl ${v}`:t==="R"?`Aufgabe ${v.split(":")[1].replace(/([+\-·])/," $1 ").replace("-","−")}`:k};
  const weak=Object.entries(it).filter(([,v])=>v[1]>=2&&v[0]/v[1]<.6).sort((a,b)=>a[1][0]/a[1][1]-b[1][0]/b[1][1]).slice(0,8);
  const done=LESSONS.filter(x=>doneCount(p,x)===3).length,last=p.log.length?new Date(p.log[p.log.length-1].ts).toLocaleDateString("de-DE"):"–";
  const tile=(v,l)=>`<div class="tile"><b>${v}</b><span>${l}</span></div>`;

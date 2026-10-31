@@ -25,6 +25,6 @@ export function voiceInventory(){const out=[],seen=new Set();const add=(t,cat)=>
  const syl=new Set();LESSONS.forEach(x=>{(x.sylls||[]).forEach(s=>syl.add(s.toLowerCase()));(x.words||[]).forEach(w=>w.segs.forEach(s=>syl.add(s.toLowerCase())))});
  syl.forEach(s=>add(s[0].toUpperCase()+s.slice(1)+".","silben"));
  LESSONS.forEach(x=>(x.items||[]).forEach(y=>{add(sentText(y),"saetze");add(gapWord(y)+".","woerter")}));
- ["Du hast alle Sätze gelesen!","Welches Wort fehlt?","Lies den Satz. Welches Bild passt?","Welches Bild passt?"].forEach(t=>add(t,"saetze"));
+ ["Du hast alle Sätze gelesen!","Wir füllen bis","auf.","Dann kommen noch","dazu.","Erst bis","Dann nehmen wir noch","heißt:","Gruppen mit je","eine Gruppe mit","Wir zählen immer","weiter:","mal","Zehner plus","Zehner minus","Einer plus","Einer minus","Einer.","Zehner.","Dazu kommt ein Zehner.","Dazu kommt ein Einer.","Wir nehmen einen Zehner weg.","Wir nehmen einen Einer weg.","ist ein Einer.","Welches Wort fehlt?","Lies den Satz. Welches Bild passt?","Welches Bild passt?"].forEach(t=>add(t,"saetze"));
  WORDS.forEach(w=>add(w.w+".","woerter"));LESSONS.forEach(x=>(x.words||[]).forEach(w=>add(w.w+".","woerter")));
  return out}

@@ -343,3 +343,65 @@ ul.weak{margin:0;padding-left:1.2em;display:grid;gap:4px}
 .sent .gap{display:inline-block;min-width:3ch;border-bottom:5px dashed var(--line);color:transparent}
 .choices.words .choice{font-size:calc(2.6rem*var(--scale))}
 @media (max-width:620px){.sent{font-size:calc(1.7rem*var(--scale))}.choices.words .choice{font-size:calc(1.7rem*var(--scale))}}
+
+/* ---------- Rechnen bis 100 und Einmaleins ---------- */
+.rod.gone i,.units i.gone{background:transparent;outline:2px dashed var(--muted);outline-offset:-2px}
+.rodsum{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;justify-content:center}
+.rodsum .plus{font-size:2em;font-weight:700;color:var(--muted);align-self:center}
+.groups{display:flex;flex-direction:column;gap:5px;align-items:center}
+.grp{display:flex;gap:3px;padding:4px 6px;border:2px solid var(--line);border-radius:10px;background:var(--surface)}
+.grp i{display:block;width:calc(var(--gs)*var(--scale));height:calc(var(--gs)*var(--scale));border-radius:50%;background:var(--ch4)}
+
+/* ---------- Kinder-Navigation: große Kacheln, wenig Text ---------- */
+.kidbar{flex-wrap:nowrap}
+.kidbar .grow{min-width:0}
+.kidbar h1{font-size:calc(1.7rem*var(--scale));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.backbtn{font-weight:700;font-size:1.1em;min-width:120px;min-height:64px}
+.greet.small .dino{width:clamp(80px,14vw,120px)}
+.greet.small .bubble{margin-bottom:clamp(16px,3vw,36px)}
+.weiter{display:flex;align-items:center;gap:18px;text-align:left;padding:.7em 1.2em;min-height:96px;border-radius:26px}
+.weiter .wplay{display:grid;place-items:center;width:64px;height:64px;border-radius:50%;background:var(--dot);color:#fff;font-size:1.8em;flex-shrink:0}
+.weiter .wtxt{display:flex;flex-direction:column;gap:2px;min-width:0}
+.weiter .wtxt b{font-size:1.6em;line-height:1.1}
+.weiter .wgl{font-family:var(--font-learn);font-weight:700;letter-spacing:.06em}
+.worlds{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+@media (max-width:760px){.worlds{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.world{--c:var(--accent);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:180px;border-width:4px;border-color:color-mix(in srgb,var(--c) 45%,var(--line));background:color-mix(in srgb,var(--c) 8%,var(--surface))}
+.world .wi{font-size:calc(4.2rem*var(--scale));line-height:1}
+.world b{font-size:1.5em}
+.w-lesen{--c:var(--ch4)}.w-zahlen{--c:var(--ch3)}.w-malen{--c:#C2185B}.w-basteln{--c:#00838F}
+.chtitle{display:flex;align-items:center;gap:10px;font-family:var(--font-learn);font-size:calc(1.7rem*var(--scale));color:var(--c,var(--fg));margin:0 4px}
+.chtitle .pcount{margin-left:auto;font-family:var(--font-ui);font-size:.55em;color:var(--muted)}
+.ltiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(170px,45%),1fr));gap:14px}
+.ltile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:150px;padding:14px 10px;border-color:color-mix(in srgb,var(--c) 35%,var(--line))}
+.ltile .ltg{font-family:var(--font-learn);font-weight:700;font-size:calc(1.9rem*var(--scale));color:var(--c);letter-spacing:.06em;line-height:1.1;text-align:center}
+.ltile .ltt{font-size:.8em;color:var(--muted);text-align:center;line-height:1.2}
+.ltile.done{background:color-mix(in srgb,var(--good) 8%,var(--surface));border-color:var(--good)}
+.ltile.current{border-color:var(--c);border-width:4px;box-shadow:0 0 0 4px color-mix(in srgb,var(--c) 20%,transparent)}
+.ltile.locked{opacity:.5;cursor:not-allowed}
+.chapters{grid-template-columns:minmax(0,1fr);gap:26px}
+.chapters.malen{grid-template-columns:minmax(0,1fr)}
+.steps{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:620px){.steps{grid-template-columns:minmax(0,1fr)}.step{min-height:120px}}
+.step{align-items:center;text-align:center;justify-content:center;min-height:230px}
+.step .gl{font-size:calc(3.2rem*var(--scale))}
+.step b{font-size:1.25em}
+.step .go{margin-top:6px;background:var(--dot);color:#fff;border-radius:999px;padding:.25em 1em;font-weight:700}
+.step.next{border-width:4px;box-shadow:0 0 0 4px color-mix(in srgb,var(--c) 20%,transparent)}
+.kidbar .lbig{font-size:calc(2rem*var(--scale));color:var(--c)}
+/* Kacheln füllen den Bildschirm: größere Ziele für Kinderfinger */
+.worlds{flex:1;grid-auto-rows:minmax(170px,1fr);min-height:0}
+.steps{flex:1;grid-auto-rows:minmax(200px,1fr);align-content:stretch}
+.albumbtn span{white-space:nowrap}
+@media (max-width:620px){
+ .kidbar{gap:8px}
+ .kidbar .grow{order:0;flex-basis:auto}
+ .backbtn{min-width:0;min-height:56px;padding:.3em .8em;font-size:1em}
+ .kidbar h1{font-size:calc(1.3rem*var(--scale))}
+ .albumbtn{padding:.2em .5em;gap:4px}
+ .albumbtn img{width:calc(30px*var(--scale));height:calc(30px*var(--scale))}
+ .steps{grid-auto-rows:minmax(120px,1fr)}
+ .world{min-height:150px}
+}
+.step .gl{font-size:clamp(3rem,7vw,5rem)}
+.step.done{background:color-mix(in srgb,var(--good) 7%,var(--surface))}
