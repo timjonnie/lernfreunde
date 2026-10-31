@@ -40,6 +40,13 @@ export const LESSONS=[
  {id:"s5",t:"Lange Wörter",syl:true,show:"GI·RAF·FE",
   words:[["Gi-raf-fe","🦒"],["Pin-gu-in","🐧"],["E-le-fant","🐘"],["Zi-tro-ne","🍋"],["Ok-to-pus","🐙"],["Ba-na-ne","🍌"]]},
  /* Zahlen: Menge (Zehnerfeld bzw. Zehnerstangen), Zahlwort und Ziffer verbinden */
+ /* Sätze: kurze Sätze aus bekannten Wörtern; das Wort in [ ] ist die Lücke beim Lückensatz */
+ {id:"t1",t:"Erste Sätze",sent:true,show:"Oma hat Eis.",games:["satzlesen","satzbild","luecke"],items:[
+  {t:"Oma hat [Eis].",e:"👵🍦"},{t:"Die [Maus] ist im Haus.",e:"🐭🏠"},{t:"Mama liest ein [Buch].",e:"👩📖"},
+  {t:"Das [Lama] trinkt Limo.",e:"🦙🥤"},{t:"Der [Hund] schläft.",e:"🐕💤"},{t:"Die [Sonne] scheint.",e:"☀️😎"}]},
+ {id:"t2",t:"Mehr Sätze",sent:true,show:"Tim malt einen Dino.",games:["satzlesen","satzbild","luecke"],items:[
+  {t:"Der Fisch schwimmt im [Wasser].",e:"🐟🌊"},{t:"Tim malt einen [Dino].",e:"🖍️🦕"},{t:"Das Auto ist [rot].",e:"🚗"},
+  {t:"Die Katze spielt mit dem [Ball].",e:"🐈⚽"},{t:"Der Vogel sitzt auf dem [Baum].",e:"🐦🌳"},{t:"Im Winter ist es [kalt].",e:"⛄❄️"}]},
  {id:"z1",t:"Zahlen bis 10",num:true,show:"0 – 10",range:[0,10],pages:[0,1,2,3,4,5,6,7,8,9,10],games:["zentdecken","wieviele","zhoeren"]},
  {id:"z2",t:"Zahlen bis 20",num:true,show:"10 – 20",range:[10,20],pages:[10,11,12,13,14,15,16,17,18,19,20],games:["zentdecken","wieviele","zhoeren"]},
  {id:"z3",t:"Zahlen bis 50",num:true,show:"20 – 50",range:[20,50],pages:[20,23,30,34,40,46,50],games:["zentdecken","wieviele","zhoeren"]},
@@ -56,6 +63,9 @@ LESSONS.forEach(x=>{if(!x.syl)return;x.words=x.words.map(([s,e])=>({segs:s.split
  x.games=["silben","hoeren","bauen"]});
 LESSONS.forEach(x=>{if(!x.games)x.games=["entdecken","anlaut","wortbild"]});
 export const GAMES={
+ satzlesen:{t:"Sätze lesen",d:"Sätze ansehen, hören und mitlesen"},
+ satzbild:{t:"Satz und Bild",d:"Den Satz lesen und das passende Bild finden"},
+ luecke:{t:"Lückensatz",d:"Welches Wort fehlt im Satz?"},
  entdecken:{t:"Buchstaben entdecken",d:"Buchstabe, Bild und Wort ansehen und hören"},
  anlaut:{t:"Anlaut finden",d:"Womit fängt das Wort an?"},
  wortbild:{t:"Wort und Bild",d:"Das Wort lesen und das passende Bild finden"},
@@ -81,3 +91,6 @@ export const LAUT={A:"aaa",E:"eee",I:"iii",O:"ooo",U:"uuu",M:"mmmm",N:"nnnn",L:"
  J:"jjj",V:"ffff",C:"kö",X:"ks",Y:"jjj",Q:"kwö",SCH:"schhh",EI:"ei",AU:"au"};
 /* Was gesprochen wird, wenn ein Buchstabe vorkommt – je nach Einstellung Laut oder Buchstabenname */
 export const sayL=(l,laut=true)=>laut&&LAUT[l]?LAUT[l]:l;
+/* Satz ohne Lücken-Markierung, Lückenwort */
+export const sentText=x=>x.t.replace(/[\[\]]/g,"");
+export const gapWord=x=>x.t.match(/\[(.+?)\]/)[1];

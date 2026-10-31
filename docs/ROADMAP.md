@@ -36,7 +36,8 @@ im Web und als App im App Store und bei Google Play.
 - ✅ Lesen: neue Lektionen J V C, X Y Q und SCH EI AU – mit Motiven aus „Malen und lernen“
   (Chamäleon, Jacke, Vogel, Xylofon, Yak, Qualle) als Bilder, Ausmalbilder und Sticker
 - ✅ Anlaut korrigiert: Auto, Eis, Ei gehören zu AU/EI statt A/E
-- Lesen: Ä, Ö, Ü, ß, EU, CH, PF im Wort; erste Sätze lesen
+- ✅ Kapitel „Sätze“: 2 Lektionen mit 12 Sätzen – Sätze lesen (Wort für Wort vorgelesen), Satz und Bild, Lückensatz
+- Lesen: Ä, Ö, Ü, ß, EU, CH, PF im Wort
 - Rechnen: Zehnerübergang, Rechnen bis 100, Einmaleins
 - Weitere Ausmalbilder und Bastelideen aus den Büchern
 

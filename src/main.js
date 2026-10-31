@@ -9,7 +9,7 @@ import "@fontsource/lexend/700.css";
 import { VOICE as VOICE_CLIPS } from "./data/voice.js";
 import { MOTIFS as MOTIF_LIST } from "./data/motifs.js";
 import { CRAFTS } from "./data/crafts.js";
-import { WORDS, LETTERS, LESSONS, GAMES, PRAISE, ROUND, COLORS, TOOL_NAME, sayL } from "./content.js";
+import { WORDS, LETTERS, LESSONS, GAMES, PRAISE, ROUND, COLORS, TOOL_NAME, sayL, sentText, gapWord } from "./content.js";
 import { normT } from "./voice-inventory.js";
 
 /* Zeigt einen Hinweis statt einer leeren Seite, falls beim Start etwas schiefgeht */
@@ -155,12 +155,13 @@ const subj=x=>x.num||x.calc?"zahlen":"lesen";
 const isOpen=(p,i)=>{if(!p.sequential)return true;const x=LESSONS[i],prev=LESSONS.slice(0,i).reverse().find(y=>subj(y)===subj(x));return !prev||doneCount(p,prev)===3};
 const fmtL1=l=>P().caps?l:l.length>1?capL(l):l+l.toLowerCase();
 const CHAPTERS=[{t:"Buchstaben",d:"Laute hören und Buchstaben erkennen",s:"lesen"},{t:"Silben",d:"Silben lesen und Wörter bauen",s:"lesen"},
- {t:"Zahlen",d:"Zahlen bis 100 sehen, hören und erkennen",s:"zahlen"},{t:"Rechnen",d:"Plus und Minus – Schritt für Schritt erklärt",s:"zahlen"}];
+ {t:"Zahlen",d:"Zahlen bis 100 sehen, hören und erkennen",s:"zahlen"},{t:"Rechnen",d:"Plus und Minus – Schritt für Schritt erklärt",s:"zahlen"},
+ {t:"Sätze",d:"Erste Sätze lesen und verstehen",s:"lesen"}];
 const SUBJECTS=[["lesen","📖 Lesen"],["zahlen","🔢 Zahlen & Rechnen"],["malen","🎨 Malen"],["basteln","✂️ Basteln"]];
-const chOf=x=>x.syl?1:x.num?2:x.calc?3:0;
+const chOf=x=>x.sent?4:x.syl?1:x.num?2:x.calc?3:0;
 const lno=x=>LESSONS.filter(y=>chOf(y)===chOf(x)).indexOf(x)+1;
 const lname=x=>`${CHAPTERS[chOf(x)].t} · Lektion ${lno(x)}`;
-const lglyph=x=>x.num||x.calc?x.show:x.syl?fmtSyl(x.show):x.review?(P().caps?"A – Z":"Aa – Zz"):x.ls.map(fmtL1).join(" ");
+const lglyph=x=>x.sent?fmtS(x.show):x.num||x.calc?x.show:x.syl?fmtSyl(x.show):x.review?(P().caps?"A – Z":"Aa – Zz"):x.ls.map(fmtL1).join(" ");
 const starSvg=(on,k=0)=>`<svg viewBox="0 0 24 24" aria-hidden="true" style="animation-delay:${k*.12}s"><path class="${on?"on":"off"}" d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg>`;
 const nextLesson=p=>LESSONS.find((x,i)=>subj(x)===p.subject&&isOpen(p,i)&&doneCount(p,x)<3);
 let L=null;
@@ -190,6 +191,7 @@ function lesson(){G=null;const p=P(),g=lp(p,L),ci=chOf(L);
  const ok=k=>k===L.games[0]?!!g[k]:(g[k]||0)>=3;const nextStep=L.games.find(k=>!ok(k));
  let glyph;if(L.num){glyph={zentdecken:String(L.range[0]+3),wieviele:"●●●",zhoeren:"👂"}}
  else if(L.calc){glyph={sogehts:"💡",bildrechnen:L.show.replace(/\d+/g,m=>"●".repeat(Math.min(+m,3))),rechnen:L.show+" = ?"}}
+ else if(L.sent){glyph={satzlesen:"📖",satzbild:L.items[0].e,luecke:"…?"}}
  else if(L.syl){glyph={silben:fmtSyl(L.sylls[0]),hoeren:"👂",bauen:L.words[0].e}}
  else{const w0=WORDS.find(w=>w.l===L.ls[0]);glyph={entdecken:fmtL(L.ls[0]),anlaut:emo(w0.e),wortbild:fmt(w0.w)}}
  const stepName=["Kennenlernen","Üben","Anwenden"];
@@ -206,7 +208,7 @@ function lesson(){G=null;const p=P(),g=lp(p,L),ci=chOf(L);
 
 /* ---------- Spiele ---------- */
 let G=null;
-function start(type){if(L.syl)return startSyl(type);if(L.num)return startNum(type);if(L.calc)return startCalc(type);const ws=WORDS.filter(x=>L.ls.includes(x.l));
+function start(type){if(L.sent)return startSent(type);if(L.syl)return startSyl(type);if(L.num)return startNum(type);if(L.calc)return startCalc(type);const ws=WORDS.filter(x=>L.ls.includes(x.l));
  if(type==="entdecken"){G={type,pages:L.ls.flatMap(l=>WORDS.filter(w=>w.l===l).slice(0,L.review?1:2)),i:0};return discover()}
  let tasks=shuffle(L.ls).map(l=>shuffle(ws.filter(w=>w.l===l))[0]).slice(0,ROUND);
  const rest=shuffle(ws.filter(w=>!tasks.includes(w)));while(tasks.length<ROUND)tasks.push(rest.pop()||shuffle(ws)[0]);
@@ -279,6 +281,49 @@ function album(back){const p=P(),have=new Set(p.stickers||[]);
   ?`<figure class="stk have"><img src="${stickerUrl(m.id)}" alt="${esc(m.w)}"><figcaption>${esc(m.w)}</figcaption></figure>`
   :`<figure class="stk"><img src="${stickerUrl(m.id)}" alt="" aria-hidden="true"><figcaption aria-label="noch nicht gesammelt">?</figcaption></figure>`).join("")}</div>`,true);
  Speech.say(`Dein Sticker-Album. Du hast ${have.size} Sticker.`);Input.refresh();bind("back",back)}
+
+/* ---------- Sätze lesen ---------- */
+const fmtS=x=>P().caps?x.toUpperCase():x;
+const sentHtml=(x,gap)=>sentText(x).split(" ").map(w=>{const core=w.replace(/[.,!?]/g,"");
+ return gap&&core===gapWord(x)?`<span class="sw gap" aria-label="Lücke">___</span>${esc(w.slice(core.length))}`:`<span class="sw">${esc(fmtS(w))}</span>`}).join(" ");
+/* liest einen Satz Wort für Wort vor und markiert dabei das Wort */
+function readSent(x){const my=++Speech.gen;const run=(async()=>{const spans=[...app.querySelectorAll(".sent .sw")];
+ for(let k=0;k<spans.length;k++){if(Speech.gen!==my)return;spans.forEach(s=>s.classList.toggle("lit",s===spans[k]));
+  await Speech.say(spans[k].textContent.toLowerCase(),{keep:true});if(!P()||!P().tts)await wait(500);else await wait(120)}
+ if(Speech.gen!==my)return;spans.forEach(s=>s.classList.remove("lit"));await wait(250);await Speech.say(sentText(x),{keep:true})})();
+ Speech.current=run;return run}
+function startSent(type){const its=L.items;
+ if(type==="satzlesen"){G={type,pages:its.slice(),i:0};return discoverSent()}
+ const tasks=shuffle(its).slice(0,ROUND);while(tasks.length<ROUND)tasks.push(shuffle(its)[0]);
+ G={type,tasks,i:0,ok:0,wrong:0};taskSent()}
+function discoverSent(){const x=G.pages[G.i];
+ view(`${topbar(dotsN(G.pages.length,G.i),false)}
+ <div class="stage"><div class="prompt" style="flex:1;flex-direction:column"><div class="pic" aria-hidden="true">${x.e}</div><p class="sent">${sentHtml(x)}</p></div>
+ <div class="navrow">${T("","Zurück","◀ Zurück",`id="prev" ${G.i===0?"disabled":""}`)}${T("primary","Hören","🔊 Hören",'id="hear"')}${T("","Weiter","Weiter ▶",'id="next"')}</div></div>`,true);
+ const speak=()=>{readSent(x);Input.refresh()};speak();
+ bind("back",lesson);bind("hear",speak);bind("prev",()=>{G.i=Math.max(0,G.i-1);discoverSent()});
+ bind("next",()=>{if(G.i<G.pages.length-1){G.i++;discoverSent()}else{const p=P();(p.prog[L.id]=p.prog[L.id]||{}).satzlesen=1;save();
+  result(1,1,"Du hast alle Sätze gelesen!")}})}
+function taskSent(){const p=P(),x=G.tasks[G.i];G.wrong=0;const n=Math.min(p.choices,4),others=shuffle(L.items.filter(y=>y!==x)).slice(0,n-1);
+ let opts,prompt,say,correct;
+ if(G.type==="satzbild"){correct=x.e;opts=shuffle([x,...others]).map(y=>({v:y.e,html:y.e,say:sentText(y),pict:1}));
+  prompt=`<div><p class="sent">${sentHtml(x)}</p><p class="ask" style="margin-inline:auto">Welches Bild passt zum Satz?</p></div>`;
+  say=p.autoRead?`${sentText(x)} Welches Bild passt?`:"Lies den Satz. Welches Bild passt?"}
+ else{correct=gapWord(x);opts=shuffle([x,...others]).map(y=>({v:gapWord(y),html:esc(fmtS(gapWord(y))),say:gapWord(y)}));
+  prompt=`<div class="pic" aria-hidden="true">${x.e}</div><div><p class="sent">${sentHtml(x,true)}</p><p class="ask" style="margin-inline:auto">Welches Wort fehlt?</p></div>`;
+  say="Welches Wort fehlt?"}
+ view(`${topbar(dotsN(G.tasks.length,G.i))}<div class="stage"><div class="prompt">${prompt}</div>
+ <div class="choices${G.type==="luecke"?" words":""}" style="--n:${n}">${opts.map(o=>T("choice"+(o.pict?" pict":""),o.say,o.html,`data-v="${esc(o.v)}" aria-label="${esc(o.say)}"`)).join("")}</div>
+ <div class="feedback" id="fb"></div></div>`,true);
+ Speech.say(say);Input.refresh();
+ bind("back",lesson);bind("again",()=>{Speech.say(say);Input.refresh()});
+ app.querySelectorAll(".choice").forEach(b=>b.onclick=async()=>{const myG=G;const fb=document.getElementById("fb");
+  if(b.dataset.v===correct){Input.pause(true);b.classList.add("right");track("T:"+sentText(x),!G.wrong);if(!G.wrong)G.ok++;
+   app.querySelectorAll(".choice").forEach(y=>y.disabled=true);const g=app.querySelector(".sw.gap");if(g){g.textContent=fmtS(correct);g.classList.remove("gap")}
+   const msg=PRAISE[Math.random()*PRAISE.length|0];fb.className="feedback ok";fb.textContent=msg;
+   await Speech.say(`${msg} ${sentText(x)}`);await wait(500);if(G!==myG)return;G.i++;G.i<G.tasks.length?taskSent():finish()}
+  else{G.wrong++;b.classList.add("wrong");b.disabled=true;fb.className="feedback no";fb.textContent="Noch nicht. Versuch es nochmal.";Input.pause(true);
+   await Speech.say("Noch nicht. Versuch es nochmal.");Input.pause(false);Input.refresh()}})}
 
 /* ---------- Silben-Spiele ---------- */
 const fmtSyl=s=>P().caps?s.toUpperCase():s.split(" ").map(t=>t[0].toUpperCase()+t.slice(1).toLowerCase()).join(" ");
@@ -642,7 +687,7 @@ function printPages(srcs){let pr=document.getElementById("print-area");if(!pr){p
 let editId=null,delArm=false;
 function adult(){S.cur=null;editId=editId&&S.profiles.find(p=>p.id===editId)?editId:S.profiles[0]?.id;delArm=false;renderAdult()}
 let adultTab="stand";
-const names={entdecken:"Entdecken",anlaut:"Anlaut",wortbild:"Wort & Bild",silben:"Silben entdecken",hoeren:"Silbe hören",bauen:"Wörter bauen",zentdecken:"Zahlen entdecken",wieviele:"Wie viele?",zhoeren:"Zahl hören",sogehts:"So geht's",bildrechnen:"Rechnen mit Bildern",rechnen:"Rechnen"};const lnum=id=>{const x=LESSONS.find(y=>y.id===id);return x?lname(x)+" · ":""};
+const names={entdecken:"Entdecken",anlaut:"Anlaut",wortbild:"Wort & Bild",silben:"Silben entdecken",hoeren:"Silbe hören",bauen:"Wörter bauen",zentdecken:"Zahlen entdecken",wieviele:"Wie viele?",zhoeren:"Zahl hören",sogehts:"So geht's",bildrechnen:"Rechnen mit Bildern",rechnen:"Rechnen",satzlesen:"Sätze lesen",satzbild:"Satz und Bild",luecke:"Lückensatz"};const lnum=id=>{const x=LESSONS.find(y=>y.id===id);return x?lname(x)+" · ":""};
 /* Lernstand: was sitzt, was übt das Kind noch? Grundlage sind die erfassten ersten Versuche (track) */
 function lernstand(p){const it=p.items||{};
  const agg=keys=>keys.reduce((a,k)=>{const v=it[k];if(v){a[0]+=v[0];a[1]+=v[1]}return a},[0,0]);
@@ -654,7 +699,7 @@ function lernstand(p){const it=p.items||{};
  const dec=[...Array(10)].map((_,d)=>[d*10,d*10+9]);
  const calcL=LESSONS.filter(x=>x.calc);
  const pretty=k=>{const [t,...r]=k.split(":");const v=r.join(":");
-  return t==="B"?`Buchstabe ${v}`:t==="S"?`Silbe ${v}`:t==="W"?`Wort „${v}“`:t==="Z"?`Zahl ${v}`:t==="R"?`Aufgabe ${v.split(":")[1].replace(/([+-])/," $1 ").replace("-","−")}`:k};
+  return t==="T"?`Satz „${v}“`:t==="B"?`Buchstabe ${v}`:t==="S"?`Silbe ${v}`:t==="W"?`Wort „${v}“`:t==="Z"?`Zahl ${v}`:t==="R"?`Aufgabe ${v.split(":")[1].replace(/([+-])/," $1 ").replace("-","−")}`:k};
  const weak=Object.entries(it).filter(([,v])=>v[1]>=2&&v[0]/v[1]<.6).sort((a,b)=>a[1][0]/a[1][1]-b[1][0]/b[1][1]).slice(0,8);
  const done=LESSONS.filter(x=>doneCount(p,x)===3).length,last=p.log.length?new Date(p.log[p.log.length-1].ts).toLocaleDateString("de-DE"):"–";
  const tile=(v,l)=>`<div class="tile"><b>${v}</b><span>${l}</span></div>`;
@@ -666,6 +711,7 @@ function lernstand(p){const it=p.items||{};
  <section><h2>Silben</h2><div class="lchips">${sylls.map(x=>chip(x,agg(["S:"+x]),true)).join("")}</div></section>
  <section><h2>Zahlen</h2><div class="lchips">${dec.map(([a,b])=>chip(`${a}–${b}`,agg(keysOf("Z:").filter(k=>{const n=+k.slice(2);return n>=a&&n<=b})))).join("")}${chip("100",agg(["Z:100"]))}</div></section>
  <section><h2>Rechnen</h2><div class="lchips">${calcL.map(x=>chip(x.t,agg(keysOf("R:"+x.id+":")))).join("")}</div></section>
+<section><h2>Sätze</h2><div class="lchips">${LESSONS.filter(x=>x.sent).map(x=>chip(x.t,agg(x.items.map(y=>"T:"+sentText(y))))).join("")}</div></section>
  ${keysOf("W:").length?`<section><h2>Wörter bauen</h2><div class="lchips">${keysOf("W:").map(k=>chip(k.slice(2),agg([k]),true)).join("")}</div></section>`:""}
  <div class="stats"><b>Lektionen</b><table>${LESSONS.map((x,i)=>{const g=lp(p,x);return `<tr><td>${lname(x)}</td><td>${x.t}</td><td>${"★".repeat(doneCount(p,x))}${"☆".repeat(3-doneCount(p,x))}</td></tr>`}).join("")}</table><b>Zuletzt gespielt</b>${p.log.length?`<table>${p.log.slice(-6).reverse().map(r=>`<tr><td>${new Date(r.ts).toLocaleDateString("de-DE")}</td><td>${lnum(r.l)}${names[r.g]||r.g}</td><td>${r.ok} von ${r.n} beim ersten Versuch</td></tr>`).join("")}</table>`:"<p>Noch keine Runden.</p>"}</div>
  </div>`}
