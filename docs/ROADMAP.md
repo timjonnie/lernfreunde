@@ -30,7 +30,7 @@ im Web und als App im App Store und bei Google Play.
 - ✅ Sticker-Album: 31 Sticker aus den Malbüchern für geschaffte Lektionen, fertige Bilder und Bastelarbeiten
 - ✅ Erwachsenenbereich mit Reitern (Lernstand, Einstellungen, Drucken & Bücher); Lernstand pro
   Buchstabe, Silbe, Zahlenbereich, Rechenart und Wort – „sitzt / fast / übt noch“, Liste „Übt noch“
-- Offline nutzbar (installierbare Web-App)
+- ✅ Offline nutzbar und installierbar (Service Worker über vite-plugin-pwa, Manifest, Icons)
 
 ## Phase 4 – Inhalte vervollständigen
 - Lesen: fehlende Buchstaben (C, J, V, X, Y, Q, Ä, Ö, Ü, ß) und Laute (Sch, Ei, Au, Eu, Ch, Pf, Qu),

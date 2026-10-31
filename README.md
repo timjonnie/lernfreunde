@@ -25,6 +25,8 @@ npm run preview   # fertige Version lokal ansehen
 | `scripts/extract-original.py` | Einmal-Skript, das den Ausgangsstand in diese Struktur zerlegt hat |
 
 Schriften (Andika, Atkinson Hyperlegible) werden mit der App ausgeliefert, nicht von Google geladen (Datenschutz).
+Die App ist offline nutzbar: Ein Service Worker (vite-plugin-pwa) speichert beim ersten Besuch
+alle Dateien; Updates werden beim nächsten Start automatisch geladen.
 Daten liegen derzeit nur im Browser (`localStorage`, Schlüssel `lernfreunde.v1`).
 
 ## Veröffentlichen
