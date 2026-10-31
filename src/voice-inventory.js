@@ -1,6 +1,6 @@
 /* Liste aller Texte, die die App spricht (Schlüssel = normalisierter Text).
    Grundlage für scripts/generate-voice.mjs; ohne Browser nutzbar. */
-import { WORDS, LETTERS, LESSONS, GAMES, PRAISE, COLORS, TOOL_NAME } from "./content.js";
+import { WORDS, LETTERS, LESSONS, GAMES, PRAISE, COLORS, TOOL_NAME, LAUT } from "./content.js";
 import { MOTIFS as MOTIF_LIST } from "./data/motifs.js";
 import { CRAFTS } from "./data/crafts.js";
 
@@ -21,6 +21,7 @@ export function voiceInventory(){const out=[],seen=new Set();const add=(t,cat)=>
  LESSONS.forEach(x=>add(x.t+".","saetze"));Object.values(GAMES).forEach(g=>add(g.t+".","saetze"));
  for(let n=0;n<=100;n++)add(n+".","zahlen");
  LETTERS.forEach(l=>add(l+".","buchstaben"));
+ LETTERS.forEach(l=>{if(LAUT[l])add(LAUT[l]+".","laute")});
  const syl=new Set();LESSONS.forEach(x=>{(x.sylls||[]).forEach(s=>syl.add(s.toLowerCase()));(x.words||[]).forEach(w=>w.segs.forEach(s=>syl.add(s.toLowerCase())))});
  syl.forEach(s=>add(s[0].toUpperCase()+s.slice(1)+".","silben"));
  WORDS.forEach(w=>add(w.w+".","woerter"));LESSONS.forEach(x=>(x.words||[]).forEach(w=>add(w.w+".","woerter")));
