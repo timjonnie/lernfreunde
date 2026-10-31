@@ -3,10 +3,13 @@ import "@fontsource/andika/400.css";
 import "@fontsource/andika/700.css";
 import "@fontsource/atkinson-hyperlegible/400.css";
 import "@fontsource/atkinson-hyperlegible/700.css";
+import "@fontsource/lexend/300.css";
+import "@fontsource/lexend/400.css";
+import "@fontsource/lexend/700.css";
 import { VOICE as VOICE_CLIPS } from "./data/voice.js";
 import { MOTIFS as MOTIF_LIST } from "./data/motifs.js";
 import { CRAFTS } from "./data/crafts.js";
-import { WORDS, LETTERS, LESSONS, GAMES, PRAISE, ROUND, COLORS, TOOL_NAME, sayL } from "./content.js";
+import { WORDS, LETTERS, LESSONS, GAMES, PRAISE, ROUND, COLORS, TOOL_NAME, sayL, sentText, gapWord } from "./content.js";
 import { normT } from "./voice-inventory.js";
 
 /* Zeigt einen Hinweis statt einer leeren Seite, falls beim Start etwas schiefgeht */
@@ -17,7 +20,7 @@ const learnedSylls=L=>{const i=LESSONS.indexOf(L);return [...new Set(LESSONS.sli
 
 /* ---------- Speicher ---------- */
 const clone=x=>JSON.parse(JSON.stringify(x));
-const DEF={subject:"lesen",name:"",face:"🦊",mode:"touch",scanMs:2000,dwellMs:1500,scanSpeak:true,choices:3,caps:true,laut:true,size:"normal",hc:false,calm:false,tts:true,rate:0.9,autoRead:true,sequential:false,prog:{},log:[],paint:{},gallery:[],craft:{}};
+const DEF={subject:"lesen",name:"",face:"🦊",mode:"touch",scanMs:2000,dwellMs:1500,scanSpeak:true,choices:3,caps:true,laut:true,size:"normal",hc:false,calm:false,tts:true,rate:0.9,autoRead:true,sequential:false,prog:{},log:[],paint:{},gallery:[],craft:{},stickers:[],rewarded:{}};
 const FACES=["🦊","🐻","🐼","🐸","🦉","🐢","🐙","🦄"];
 let S={profiles:[],cur:null};
 function load(){try{const r=localStorage.getItem("lernfreunde.v1");if(r)S=JSON.parse(r)}catch(e){}
@@ -29,10 +32,15 @@ function load(){try{const r=localStorage.getItem("lernfreunde.v1");if(r)S=JSON.p
    log:[{g:"anlaut",l:"l1",ok:5,n:5,ts:ago(4)},{g:"wortbild",l:"l1",ok:4,n:5,ts:ago(4)},{g:"anlaut",l:"l2",ok:4,n:5,ts:ago(2)},{g:"wortbild",l:"l2",ok:3,n:5,ts:ago(1)}]},
   {...clone(DEF),id:"p2",name:"Tim",face:"🐢",example:true,mode:"scan1",choices:2,size:"gross",calm:true,sequential:true,
    prog:{l1:{entdecken:1,anlaut:3}},log:[{g:"anlaut",l:"l1",ok:3,n:5,ts:ago(1)}]});S.seed2=true;save()}
- S.profiles.forEach(p=>{for(const k in DEF)if(p[k]===undefined)p[k]=clone(DEF[k])})}
+ S.profiles.forEach(p=>{for(const k in DEF)if(p[k]===undefined)p[k]=clone(DEF[k])})
+ if(!S.seed3){const e=S.profiles.find(p=>p.id==="p1"&&p.example);if(e)e.items={"B:M":[4,4,0],"B:A":[5,5,0],"B:O":[3,4,0],"B:L":[3,3,0],"B:I":[2,4,0],"B:E":[4,5,0],"B:U":[1,3,0],"B:N":[1,2,0]};S.seed3=true}
+ /* bestehende Profile: für schon geschaffte Lektionen nachträglich Sticker vergeben */
+ S.profiles.forEach(p=>{if(p.stickerInit)return;p.stickerInit=true;LESSONS.forEach(x=>{if(doneCount(p,x)===3)giveSticker(p,"l:"+x.id,lessonPrefer(x))})});save()}
 function save(){try{localStorage.setItem("lernfreunde.v1",JSON.stringify(S))}catch(e){}}
 const P=()=>S.profiles.find(p=>p.id===S.cur);
 
+/* Lernstand pro Buchstabe, Silbe, Wort, Zahl und Rechenaufgabe: [richtig beim ersten Versuch, Versuche, zuletzt] */
+function track(key,ok){const p=P();if(!p||!key)return;const it=(p.items=p.items||{})[key]=p.items[key]||[0,0,0];it[1]++;if(ok)it[0]++;it[2]=Date.now()}
 /* ---------- Sprache ---------- */
 /* ---------- Lehrerinnen-Stimme: aufgenommene Clips (ElevenLabs), sonst Sprachausgabe des Geräts ---------- */
 const VOICE=VOICE_CLIPS;
@@ -108,18 +116,31 @@ function cancelDwell(){clearTimeout(Input.dwellT);if(Input.dwellEl)Input.dwellEl
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
 const fmt=w=>P().caps?w.toUpperCase():w;
-const fmtL=l=>P().caps?l:l+" "+l.toLowerCase();
+/* Buchstabe bzw. Laut aus mehreren Buchstaben (SCH) in der eingestellten Schreibweise */
+const capL=l=>l[0]+l.slice(1).toLowerCase();
+const fmtL=l=>P().caps?l:capL(l)+" "+l.toLowerCase();
+/* Bild zu einem Wort: Emoji oder Sticker aus den Malbüchern ("img:<id>") */
+const emo=e=>e.startsWith("img:")?`<img class="wimg" src="assets/stickers/${e.slice(4)}.png" alt="">`:e;
 const T=(cls,say,html,attrs="")=>`<button class="tgt ${cls}" data-say="${esc(say)}" ${attrs}>${html}<span class="dwell"><i></i></span></button>`;
 function applyLook(){const p=P();document.body.dataset.size=p?p.size:"normal";document.body.dataset.hc=p&&p.hc?"1":"0";document.body.dataset.calm=p&&p.calm?"1":"0"}
 function view(html,child){app.innerHTML=html;if(child)app.dataset.child="1";else delete app.dataset.child;applyLook();cancelDwell();Input.pause(false);Input.refresh()}
 const bind=(id,fn)=>{const el=document.getElementById(id);if(el)el.onclick=fn};
 
 /* ---------- Startseite ---------- */
+/* Maskottchen: der Dino aus „Mal mit mir!“ in CI-Farben */
+const DINO="assets/mascot/dino.png";
+const dino=(cls="")=>`<img class="dino ${cls}" src="${DINO}" alt="" aria-hidden="true">`;
+const starsOf=p=>LESSONS.reduce((n,x)=>n+doneCount(p,x),0);
+function kidCard(p){const nx=nextLesson(p),st=starsOf(p);
+ const where=nx?`Weiter: ${CHAPTERS[chOf(nx)].t} · Lektion ${lno(nx)}`:p.subject==="malen"?"Malen":p.subject==="basteln"?"Basteln":"Alles geschafft!";
+ return `<button class="tgt kid" data-id="${p.id}" data-say="${esc(p.name)}"><span class="face" aria-hidden="true">${p.face}</span><span class="name">${esc(p.name)}</span>
+  <span class="kidmeta"><span class="kstars" aria-label="${st} Sterne">${starSvg(true)}<b>${st}</b></span><span>${esc(where)}</span></span>${p.example?'<span class="badge">Beispielprofil</span>':""}</button>`}
 function home(){S.cur=null;window.speechSynthesis?.cancel();
- view(`<div class="hello"><div><div class="badge">Lernfreunde · Lesen, Rechnen, Malen, Basteln</div><h1>Wer lernt heute?</h1></div>
- <button class="gate" id="gate" aria-label="Für Erwachsene: 2 Sekunden gedrückt halten"><i></i><span style="position:relative">Für Erwachsene · gedrückt halten</span></button></div>
- <div class="kids">${S.profiles.map(p=>`<button class="tgt kid" data-id="${p.id}"><span class="face" aria-hidden="true">${p.face}</span><span class="name">${esc(p.name)}</span>${p.example?'<span class="badge">Beispielprofil</span>':""}</button>`).join("")}</div>
- <p class="note">Alle Daten bleiben nur auf diesem Gerät.</p>`);
+ view(`<header class="brandbar"><div class="wordmark" aria-label="Lernfreunde"><span class="wl">Lern</span><span class="wb">freunde</span><span class="wd">.</span></div>
+ <button class="gate" id="gate" aria-label="Für Erwachsene: 2 Sekunden gedrückt halten"><i></i><span style="position:relative">Für Erwachsene · gedrückt halten</span></button></header>
+ <section class="greet">${dino()}<div class="bubble"><h1>Hallo! Wer lernt heute mit mir?</h1><p>Tippe auf deinen Namen.</p></div></section>
+ <div class="kids">${S.profiles.map(kidCard).join("")}</div>
+ <p class="note">Lesen, Rechnen, Malen und Basteln · Alle Daten bleiben nur auf diesem Gerät.</p>`);
  app.querySelectorAll(".kid").forEach(b=>b.onclick=()=>{S.cur=b.dataset.id;save();menu()});
  const g=document.getElementById("gate");let t;
  const start=e=>{if(e.repeat)return;g.classList.add("holding");t=setTimeout(()=>{g.classList.remove("holding");adult()},2000)};
@@ -132,14 +153,15 @@ const lp=(p,L)=>p.prog[L.id]||{};
 const doneCount=(p,L)=>{const g=lp(p,L),[a,b,c]=L.games;return (g[a]?1:0)+((g[b]||0)>=3?1:0)+((g[c]||0)>=3?1:0)};
 const subj=x=>x.num||x.calc?"zahlen":"lesen";
 const isOpen=(p,i)=>{if(!p.sequential)return true;const x=LESSONS[i],prev=LESSONS.slice(0,i).reverse().find(y=>subj(y)===subj(x));return !prev||doneCount(p,prev)===3};
-const fmtL1=l=>P().caps?l:l+l.toLowerCase();
+const fmtL1=l=>P().caps?l:l.length>1?capL(l):l+l.toLowerCase();
 const CHAPTERS=[{t:"Buchstaben",d:"Laute hören und Buchstaben erkennen",s:"lesen"},{t:"Silben",d:"Silben lesen und Wörter bauen",s:"lesen"},
- {t:"Zahlen",d:"Zahlen bis 100 sehen, hören und erkennen",s:"zahlen"},{t:"Rechnen",d:"Plus und Minus – Schritt für Schritt erklärt",s:"zahlen"}];
+ {t:"Zahlen",d:"Zahlen bis 100 sehen, hören und erkennen",s:"zahlen"},{t:"Rechnen",d:"Plus und Minus – Schritt für Schritt erklärt",s:"zahlen"},
+ {t:"Sätze",d:"Erste Sätze lesen und verstehen",s:"lesen"}];
 const SUBJECTS=[["lesen","📖 Lesen"],["zahlen","🔢 Zahlen & Rechnen"],["malen","🎨 Malen"],["basteln","✂️ Basteln"]];
-const chOf=x=>x.syl?1:x.num?2:x.calc?3:0;
+const chOf=x=>x.sent?4:x.syl?1:x.num?2:x.calc?3:0;
 const lno=x=>LESSONS.filter(y=>chOf(y)===chOf(x)).indexOf(x)+1;
 const lname=x=>`${CHAPTERS[chOf(x)].t} · Lektion ${lno(x)}`;
-const lglyph=x=>x.num||x.calc?x.show:x.syl?fmtSyl(x.show):x.review?(P().caps?"A – Z":"Aa – Zz"):x.ls.map(fmtL1).join(" ");
+const lglyph=x=>x.sent?fmtS(x.show):x.num||x.calc?x.show:x.syl?fmtSyl(x.show):x.review?(P().caps?"A – Z":"Aa – Zz"):x.ls.map(fmtL1).join(" ");
 const starSvg=(on,k=0)=>`<svg viewBox="0 0 24 24" aria-hidden="true" style="animation-delay:${k*.12}s"><path class="${on?"on":"off"}" d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg>`;
 const nextLesson=p=>LESSONS.find((x,i)=>subj(x)===p.subject&&isOpen(p,i)&&doneCount(p,x)<3);
 let L=null;
@@ -157,20 +179,21 @@ function menu(){G=null;const p=P();L=null;if(p.subject==="malen")return malMenu(
     <span class="lbody"><span class="ll">${lglyph(x)}</span><b>${x.t}</b>${cur?'<span class="chip">Hier geht es weiter</span>':""}</span>
     <span class="lstars" aria-label="${d} von 3 Sternen">${[0,1,2].map(k=>starSvg(k<d)).join("")}</span>`,
    `data-i="${i}" ${o?"":"disabled"}`)}).join("")}</div></section>`};
- view(`<div class="bar">${T("","Zurück zur Startseite","⌂ Start",'id="home"')}<div class="grow"><h1 class="hi">${p.face} Hallo ${esc(p.name)}!</h1></div></div>
+ view(`<div class="bar">${T("","Zurück zur Startseite","⌂ Start",'id="home"')}<div class="grow"><h1 class="hi">${p.face} Hallo ${esc(p.name)}!</h1></div>${albumBtn(p)}</div>
  ${subjBar(p)}
  <div class="chapters">${CHAPTERS.map(chapter).join("")}</div>`,true);
  Speech.say(`Hallo! Welche Lektion möchtest du machen?`);Input.refresh();
  bindSubj(p);
- bind("home",home);app.querySelectorAll("[data-i]").forEach(b=>b.onclick=()=>{L=LESSONS[+b.dataset.i];lesson()})}
+ bind("home",home);bind("album",()=>album(menu));app.querySelectorAll("[data-i]").forEach(b=>b.onclick=()=>{L=LESSONS[+b.dataset.i];lesson()})}
 
 function lesson(){G=null;const p=P(),g=lp(p,L),ci=chOf(L);
  const st=k=>k===L.games[0]?(g[k]?"✓ geschafft":"Noch nicht gemacht"):(g[k]!=null?`✓ Bestes Ergebnis: ${g[k]} von ${ROUND}`:"Noch nicht gemacht");
  const ok=k=>k===L.games[0]?!!g[k]:(g[k]||0)>=3;const nextStep=L.games.find(k=>!ok(k));
  let glyph;if(L.num){glyph={zentdecken:String(L.range[0]+3),wieviele:"●●●",zhoeren:"👂"}}
  else if(L.calc){glyph={sogehts:"💡",bildrechnen:L.show.replace(/\d+/g,m=>"●".repeat(Math.min(+m,3))),rechnen:L.show+" = ?"}}
+ else if(L.sent){glyph={satzlesen:"📖",satzbild:L.items[0].e,luecke:"…?"}}
  else if(L.syl){glyph={silben:fmtSyl(L.sylls[0]),hoeren:"👂",bauen:L.words[0].e}}
- else{const w0=WORDS.find(w=>w.l===L.ls[0]);glyph={entdecken:fmtL(L.ls[0]),anlaut:w0.e,wortbild:fmt(w0.w)}}
+ else{const w0=WORDS.find(w=>w.l===L.ls[0]);glyph={entdecken:fmtL(L.ls[0]),anlaut:emo(w0.e),wortbild:fmt(w0.w)}}
  const stepName=["Kennenlernen","Üben","Anwenden"];
  view(`<div class="bar">${T("","Zurück zu den Lektionen","◀ Lektionen",'id="back"')}</div>
  <header class="lhead c${ci+1}"><div><div class="badge">${lname(L)}</div><h1 class="hi">${L.t}</h1></div>
@@ -185,7 +208,7 @@ function lesson(){G=null;const p=P(),g=lp(p,L),ci=chOf(L);
 
 /* ---------- Spiele ---------- */
 let G=null;
-function start(type){if(L.syl)return startSyl(type);if(L.num)return startNum(type);if(L.calc)return startCalc(type);const ws=WORDS.filter(x=>L.ls.includes(x.l));
+function start(type){if(L.sent)return startSent(type);if(L.syl)return startSyl(type);if(L.num)return startNum(type);if(L.calc)return startCalc(type);const ws=WORDS.filter(x=>L.ls.includes(x.l));
  if(type==="entdecken"){G={type,pages:L.ls.flatMap(l=>WORDS.filter(w=>w.l===l).slice(0,L.review?1:2)),i:0};return discover()}
  let tasks=shuffle(L.ls).map(l=>shuffle(ws.filter(w=>w.l===l))[0]).slice(0,ROUND);
  const rest=shuffle(ws.filter(w=>!tasks.includes(w)));while(tasks.length<ROUND)tasks.push(rest.pop()||shuffle(ws)[0]);
@@ -195,8 +218,8 @@ const topbar=(mid,again=true)=>`<div class="bar">${T("","Zurück zur Lektion","�
 
 function discover(){const w=G.pages[G.i],l=w.l,word=fmt(w.w),text=`${sayL(l,P().laut)} wie ${w.w}.`;
  view(`${topbar(dotsN(G.pages.length,G.i),false)}
- <div class="stage"><div class="prompt" style="flex:1"><div class="letter">${fmtL(l)}</div><div class="pic" aria-hidden="true">${w.e}</div>
- <div class="word"><span class="first">${word[0]}</span>${word.slice(1)}</div></div>
+ <div class="stage"><div class="prompt" style="flex:1"><div class="letter">${fmtL(l)}</div><div class="pic" aria-hidden="true">${emo(w.e)}</div>
+ <div class="word"><span class="first">${word.slice(0,l.length)}</span>${word.slice(l.length)}</div></div>
  <div class="navrow">${T("","Zurück","◀ Zurück",`id="prev" ${G.i===0?"disabled":""}`)}${T("primary","Hören","🔊 Hören",'id="hear"')}${T("","Weiter","Weiter ▶",'id="next"')}</div></div>`,true);
  Speech.say(text);Input.refresh();
  bind("back",lesson);bind("hear",()=>{Speech.say(text);Input.refresh()});
@@ -208,9 +231,9 @@ function task(){const p=P(),t=G.tasks[G.i];G.wrong=0;const n=Math.min(p.choices,
  let opts,prompt,say;
  if(G.type==="anlaut"){let others=shuffle(known.filter(l=>l!==t.l));if(others.length<n-1)others=others.concat(shuffle(LETTERS.filter(l=>l!==t.l&&!others.includes(l))));
   opts=shuffle([t.l,...others.slice(0,n-1)]).map(l=>({v:l,html:fmtL(l).split(" ")[0],say:sayL(l,p.laut)}));
-  prompt=`<div class="pic" aria-hidden="true">${t.e}</div><p class="ask">Womit fängt das Wort an?</p>`;say=`${t.w}. Womit fängt das Wort an?`}
+  prompt=`<div class="pic" aria-hidden="true">${emo(t.e)}</div><p class="ask">Womit fängt das Wort an?</p>`;say=`${t.w}. Womit fängt das Wort an?`}
  else{let others=shuffle(WORDS.filter(x=>x.l!==t.l&&known.includes(x.l)));if(others.length<n-1)others=others.concat(shuffle(WORDS.filter(x=>x.l!==t.l&&!others.includes(x))));
-  opts=shuffle([t,...others.slice(0,n-1)]).map(x=>({v:x.w,html:x.e,say:x.w,pict:1}));
+  opts=shuffle([t,...others.slice(0,n-1)]).map(x=>({v:x.w,html:emo(x.e),say:x.w,pict:1}));
   prompt=`<div><div class="word">${fmt(t.w)}</div><p class="ask" style="margin-inline:auto">Welches Bild passt zum Wort?</p></div>`;
   say=p.autoRead?`${t.w}. Welches Bild passt?`:"Lies das Wort. Welches Bild passt?"}
  const correct=G.type==="anlaut"?t.l:t.w;
@@ -220,7 +243,7 @@ function task(){const p=P(),t=G.tasks[G.i];G.wrong=0;const n=Math.min(p.choices,
  Speech.say(say);Input.refresh();
  bind("back",lesson);bind("again",()=>{Speech.say(say);Input.refresh()});
  app.querySelectorAll(".choice").forEach(b=>b.onclick=async()=>{const myG=G;const fb=document.getElementById("fb");
-  if(b.dataset.v===correct){Input.pause(true);b.classList.add("right");if(!G.wrong)G.ok++;
+  if(b.dataset.v===correct){Input.pause(true);b.classList.add("right");track(G.type==="anlaut"||G.type==="wortbild"?"B:"+t.l:"",!G.wrong);if(!G.wrong)G.ok++;
    app.querySelectorAll(".choice").forEach(x=>x.disabled=true);
    const msg=PRAISE[Math.random()*PRAISE.length|0];fb.className="feedback ok";fb.textContent=msg+" "+(G.type==="anlaut"?`${t.w} beginnt mit ${t.l}.`:fmt(t.w));
    await Speech.say(G.type==="anlaut"?`${msg} ${t.w} beginnt mit ${sayL(t.l,p.laut)}.`:`${msg} ${t.w}.`);
@@ -235,10 +258,72 @@ function finish(){const p=P(),pr=(p.prog[L.id]=p.prog[L.id]||{});pr[G.type]=Math
  result(G.ok,G.tasks.length,G.ok>=G.tasks.length-1?"Super gemacht!":"Gut geübt!")}
 function result(ok,n,title){const p=P(),i=LESSONS.indexOf(L),complete=doneCount(p,L)===3,rew=complete&&L.ls?L.ls.map(l=>MOTIFS.find(m=>m.l===l)).find(Boolean):null,next=LESSONS.slice(i+1).find(x=>subj(x)===subj(L));
  if(complete)title=`Lektion ${lno(L)} geschafft!`;
+ const got=complete?giveSticker(p,"l:"+L.id,lessonPrefer(L)):null;
  const st=Math.max(1,Math.round(ok/n*5));const star=(on,k)=>`<svg viewBox="0 0 24 24" aria-hidden="true" style="animation-delay:${k*.12}s"><path class="${on?"on":"off"}" d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg>`;
- view(`<div class="result"><h2>${title}</h2><div class="stars" role="img" aria-label="${st} von 5 Sternen">${[0,1,2,3,4].map(k=>star(k<st,k)).join("")}</div>
- <div class="rowbtns">${complete&&next?T("primary","Nächste Lektion","Nächste Lektion ▶",'id="nextL"'):""}${T(complete&&next?"":"primary","Nochmal spielen","↻ Nochmal",'id="again2"')}${T("","Zur Lektion","Zur Lektion",'id="menu"')}${rew?T("",`${rew.w} ausmalen`,`🎨 ${rew.w} ausmalen`,'id="paintR"'):""}</div></div>`,true);
- Speech.say(title);Input.refresh();const type=G.type;bind("paintR",()=>paintOpen(rew,lesson));bind("again2",()=>start(type));bind("menu",lesson);bind("nextL",()=>{L=next;lesson()})}
+ view(`<div class="result">${got?newSticker(got):dino("cheer")}<h2>${title}</h2><div class="stars" role="img" aria-label="${st} von 5 Sternen">${[0,1,2,3,4].map(k=>star(k<st,k)).join("")}</div>
+ <div class="rowbtns">${complete&&next?T("primary","Nächste Lektion","Nächste Lektion ▶",'id="nextL"'):""}${T(complete&&next?"":"primary","Nochmal spielen","↻ Nochmal",'id="again2"')}${T("","Zur Lektion","Zur Lektion",'id="menu"')}${rew?T("",`${rew.w} ausmalen`,`🎨 ${rew.w} ausmalen`,'id="paintR"'):""}${got?T("","Sticker-Album","Sticker-Album",'id="album"'):""}</div></div>`,true);
+ Speech.say(got?`${title} Du bekommst einen Sticker: ${got.w}.`:title);Input.refresh();bind("album",()=>album(lesson));const type=G.type;bind("paintR",()=>paintOpen(rew,lesson));bind("again2",()=>start(type));bind("menu",lesson);bind("nextL",()=>{L=next;lesson()})}
+
+/* ---------- Sticker-Album: Sticker aus den Malbüchern für geschaffte Lektionen, Bilder und Bastelarbeiten ---------- */
+const stickerUrl=id=>`assets/stickers/${id}.png`;
+const lessonPrefer=x=>x.ls?MOTIFS.filter(m=>x.ls.includes(m.l)).map(m=>m.id):[];
+/* vergibt höchstens einen Sticker pro Anlass (key); bevorzugt passende Motive, sonst das nächste fehlende */
+function giveSticker(p,key,prefer){p.stickers=p.stickers||[];p.rewarded=p.rewarded||{};if(p.rewarded[key])return null;
+ const free=MOTIFS.map(m=>m.id).filter(id=>!p.stickers.includes(id));p.rewarded[key]=1;
+ if(!free.length){save();return null}
+ const id=(prefer||[]).find(x=>free.includes(x))||free[0];p.stickers.push(id);save();return MOTIFS.find(m=>m.id===id)}
+const newSticker=(m,small)=>`<div class="newsticker${small?" small":""}"><img src="${stickerUrl(m.id)}" alt=""><span>Neuer Sticker: <b>${esc(m.w)}</b></span></div>`;
+const albumBtn=p=>T("albumbtn","Sticker-Album",`<img src="${stickerUrl((p.stickers||[]).slice(-1)[0]||"s_dino")}" alt=""> <span>${(p.stickers||[]).length} / ${MOTIFS.length}</span>`,'id="album"');
+function album(back){const p=P(),have=new Set(p.stickers||[]);
+ view(`<div class="bar">${T("","Zurück","◀ Zurück",'id="back"')}<div class="grow"><h1 class="hi">Mein Sticker-Album</h1></div></div>
+ <p class="note">${have.size} von ${MOTIFS.length} Stickern gesammelt. Für jede geschaffte Lektion, jedes fertige Bild und jede Bastelarbeit gibt es einen neuen.</p>
+ <div class="album">${MOTIFS.map(m=>have.has(m.id)
+  ?`<figure class="stk have"><img src="${stickerUrl(m.id)}" alt="${esc(m.w)}"><figcaption>${esc(m.w)}</figcaption></figure>`
+  :`<figure class="stk"><img src="${stickerUrl(m.id)}" alt="" aria-hidden="true"><figcaption aria-label="noch nicht gesammelt">?</figcaption></figure>`).join("")}</div>`,true);
+ Speech.say(`Dein Sticker-Album. Du hast ${have.size} Sticker.`);Input.refresh();bind("back",back)}
+
+/* ---------- Sätze lesen ---------- */
+const fmtS=x=>P().caps?x.toUpperCase():x;
+const sentHtml=(x,gap)=>sentText(x).split(" ").map(w=>{const core=w.replace(/[.,!?]/g,"");
+ return gap&&core===gapWord(x)?`<span class="sw gap" aria-label="Lücke">___</span>${esc(w.slice(core.length))}`:`<span class="sw">${esc(fmtS(w))}</span>`}).join(" ");
+/* liest einen Satz Wort für Wort vor und markiert dabei das Wort */
+function readSent(x){const my=++Speech.gen;const run=(async()=>{const spans=[...app.querySelectorAll(".sent .sw")];
+ for(let k=0;k<spans.length;k++){if(Speech.gen!==my)return;spans.forEach(s=>s.classList.toggle("lit",s===spans[k]));
+  await Speech.say(spans[k].textContent.toLowerCase(),{keep:true});if(!P()||!P().tts)await wait(500);else await wait(120)}
+ if(Speech.gen!==my)return;spans.forEach(s=>s.classList.remove("lit"));await wait(250);await Speech.say(sentText(x),{keep:true})})();
+ Speech.current=run;return run}
+function startSent(type){const its=L.items;
+ if(type==="satzlesen"){G={type,pages:its.slice(),i:0};return discoverSent()}
+ const tasks=shuffle(its).slice(0,ROUND);while(tasks.length<ROUND)tasks.push(shuffle(its)[0]);
+ G={type,tasks,i:0,ok:0,wrong:0};taskSent()}
+function discoverSent(){const x=G.pages[G.i];
+ view(`${topbar(dotsN(G.pages.length,G.i),false)}
+ <div class="stage"><div class="prompt" style="flex:1;flex-direction:column"><div class="pic" aria-hidden="true">${x.e}</div><p class="sent">${sentHtml(x)}</p></div>
+ <div class="navrow">${T("","Zurück","◀ Zurück",`id="prev" ${G.i===0?"disabled":""}`)}${T("primary","Hören","🔊 Hören",'id="hear"')}${T("","Weiter","Weiter ▶",'id="next"')}</div></div>`,true);
+ const speak=()=>{readSent(x);Input.refresh()};speak();
+ bind("back",lesson);bind("hear",speak);bind("prev",()=>{G.i=Math.max(0,G.i-1);discoverSent()});
+ bind("next",()=>{if(G.i<G.pages.length-1){G.i++;discoverSent()}else{const p=P();(p.prog[L.id]=p.prog[L.id]||{}).satzlesen=1;save();
+  result(1,1,"Du hast alle Sätze gelesen!")}})}
+function taskSent(){const p=P(),x=G.tasks[G.i];G.wrong=0;const n=Math.min(p.choices,4),others=shuffle(L.items.filter(y=>y!==x)).slice(0,n-1);
+ let opts,prompt,say,correct;
+ if(G.type==="satzbild"){correct=x.e;opts=shuffle([x,...others]).map(y=>({v:y.e,html:y.e,say:sentText(y),pict:1}));
+  prompt=`<div><p class="sent">${sentHtml(x)}</p><p class="ask" style="margin-inline:auto">Welches Bild passt zum Satz?</p></div>`;
+  say=p.autoRead?`${sentText(x)} Welches Bild passt?`:"Lies den Satz. Welches Bild passt?"}
+ else{correct=gapWord(x);opts=shuffle([x,...others]).map(y=>({v:gapWord(y),html:esc(fmtS(gapWord(y))),say:gapWord(y)}));
+  prompt=`<div class="pic" aria-hidden="true">${x.e}</div><div><p class="sent">${sentHtml(x,true)}</p><p class="ask" style="margin-inline:auto">Welches Wort fehlt?</p></div>`;
+  say="Welches Wort fehlt?"}
+ view(`${topbar(dotsN(G.tasks.length,G.i))}<div class="stage"><div class="prompt">${prompt}</div>
+ <div class="choices${G.type==="luecke"?" words":""}" style="--n:${n}">${opts.map(o=>T("choice"+(o.pict?" pict":""),o.say,o.html,`data-v="${esc(o.v)}" aria-label="${esc(o.say)}"`)).join("")}</div>
+ <div class="feedback" id="fb"></div></div>`,true);
+ Speech.say(say);Input.refresh();
+ bind("back",lesson);bind("again",()=>{Speech.say(say);Input.refresh()});
+ app.querySelectorAll(".choice").forEach(b=>b.onclick=async()=>{const myG=G;const fb=document.getElementById("fb");
+  if(b.dataset.v===correct){Input.pause(true);b.classList.add("right");track("T:"+sentText(x),!G.wrong);if(!G.wrong)G.ok++;
+   app.querySelectorAll(".choice").forEach(y=>y.disabled=true);const g=app.querySelector(".sw.gap");if(g){g.textContent=fmtS(correct);g.classList.remove("gap")}
+   const msg=PRAISE[Math.random()*PRAISE.length|0];fb.className="feedback ok";fb.textContent=msg;
+   await Speech.say(`${msg} ${sentText(x)}`);await wait(500);if(G!==myG)return;G.i++;G.i<G.tasks.length?taskSent():finish()}
+  else{G.wrong++;b.classList.add("wrong");b.disabled=true;fb.className="feedback no";fb.textContent="Noch nicht. Versuch es nochmal.";Input.pause(true);
+   await Speech.say("Noch nicht. Versuch es nochmal.");Input.pause(false);Input.refresh()}})}
 
 /* ---------- Silben-Spiele ---------- */
 const fmtSyl=s=>P().caps?s.toUpperCase():s.split(" ").map(t=>t[0].toUpperCase()+t.slice(1).toLowerCase()).join(" ");
@@ -285,7 +370,7 @@ function taskHoeren(){const p=P(),t=G.tasks[G.i];G.wrong=0;const n=Math.min(p.ch
  Speech.say(say);Input.refresh();
  bind("back",lesson);bind("again",()=>{Speech.say(sayS(t)+".");Input.refresh()});
  app.querySelectorAll(".choice").forEach(b=>b.onclick=async()=>{const myG=G;const fb=document.getElementById("fb");
-  if(b.dataset.v===t){b.classList.add("right");if(!G.wrong)G.ok++;app.querySelectorAll(".choice").forEach(x=>x.disabled=true);
+  if(b.dataset.v===t){b.classList.add("right");track("S:"+t,!G.wrong);if(!G.wrong)G.ok++;app.querySelectorAll(".choice").forEach(x=>x.disabled=true);
    await praiseNext(fb,optSyl(t),()=>Speech.say(sayS(t)+".",{keep:true}))}
   else{G.wrong++;b.classList.add("wrong");b.disabled=true;fb.className="feedback no";fb.textContent="Noch nicht. Hör nochmal.";
    Input.pause(true);await Speech.say(`Noch nicht. Hör genau: ${sayS(t)}.`);Input.pause(false);Input.refresh()}})}
@@ -305,7 +390,7 @@ function taskBauen(first){const p=P(),t=G.tasks[G.i];
   Input.pause(true);
   if(b.dataset.v===exp){G.filled++;G.bad=[];
    if(G.filled<t.segs.length){await Speech.say(sayS(exp)+".");if(G!==myG)return;taskBauen(false);return}
-   if(!G.wrong)G.ok++;taskBauen(false);Input.pause(true);app.querySelectorAll(".choice").forEach(x=>x.disabled=true);
+   track("W:"+t.w,!G.wrong);if(!G.wrong)G.ok++;taskBauen(false);Input.pause(true);app.querySelectorAll(".choice").forEach(x=>x.disabled=true);
    await praiseNext(document.getElementById("fb"),fmt(t.w),()=>readWord(t))}
   else{G.wrong++;G.bad.push(b.dataset.v);b.classList.add("wrong");b.disabled=true;fb.className="feedback no";fb.textContent="Noch nicht. Hör genau.";
    await Speech.say("Noch nicht. Hör genau.");await readWord(t);Input.pause(false);Input.refresh()}})}
@@ -385,7 +470,7 @@ function taskNum(){const p=P(),t=G.tasks[G.i];G.wrong=0;const n=Math.min(p.choic
  Speech.say(say);Input.refresh();
  bind("back",lesson);bind("again",()=>{Speech.say(G.type==="zhoeren"?`${t}.`:say);Input.refresh()});
  app.querySelectorAll(".choice").forEach(b=>b.onclick=async()=>{const myG=G;const fb=document.getElementById("fb"),v=+b.dataset.v;
-  if(v===t){Input.pause(true);b.classList.add("right");if(!G.wrong)G.ok++;app.querySelectorAll(".choice").forEach(x=>x.disabled=true);
+  if(v===t){Input.pause(true);b.classList.add("right");track("Z:"+t,!G.wrong);if(!G.wrong)G.ok++;app.querySelectorAll(".choice").forEach(x=>x.disabled=true);
    const msg=PRAISE[Math.random()*PRAISE.length|0];fb.className="feedback ok";fb.textContent=`${msg} ${t}${t>=10?" – "+zeText(t):""}`;
    await Speech.say(G.type==="wieviele"?`${msg} Es sind ${t}.`:`${msg} ${t}.`);await wait(500);if(G!==myG)return;G.i++;G.i<G.tasks.length?taskNum():finish()}
   else{G.wrong++;b.classList.add("wrong");b.disabled=true;fb.className="feedback no";Input.pause(true);let s;
@@ -415,7 +500,7 @@ function taskCalc(){const p=P(),t=G.tasks[G.i],r=res(t);G.wrong=0;const n=Math.m
  Speech.say(say);Input.refresh();
  bind("back",lesson);bind("again",()=>{Speech.say(say);Input.refresh()});
  app.querySelectorAll(".choice").forEach(b=>b.onclick=async()=>{const myG=G;const fb=document.getElementById("fb"),v=+b.dataset.v;
-  if(v===r){Input.pause(true);b.classList.add("right");if(!G.wrong)G.ok++;app.querySelectorAll(".choice").forEach(x=>x.disabled=true);
+  if(v===r){Input.pause(true);b.classList.add("right");track("R:"+L.id+":"+t.a+t.op+t.b,!G.wrong);if(!G.wrong)G.ok++;app.querySelectorAll(".choice").forEach(x=>x.disabled=true);
    const eq=document.getElementById("eq");if(eq)eq.innerHTML=showEq(t,r);
    const msg=PRAISE[Math.random()*PRAISE.length|0];fb.className="feedback ok";fb.textContent=`${msg} ${t.a} ${t.op==="+"?"+":"−"} ${t.b} = ${r}`;
    await Speech.say(`${msg} ${sayEq(t,true)}.`);await wait(500);if(G!==myG)return;G.i++;G.i<G.tasks.length?taskCalc():finish()}
@@ -459,7 +544,7 @@ let PM=null;
 function subjBar(p){return `<div class="subjects" role="group" aria-label="Fach">${SUBJECTS.map(([k,l])=>T("subj"+(p.subject===k?" on":""),l.replace(/^\S+ /,""),l,`data-s="${k}" aria-pressed="${p.subject===k}"`)).join("")}</div>`}
 function bindSubj(p){app.querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{p.subject=b.dataset.s;save();menu()})}
 function malMenu(){const p=P();PM=null;const scan=Input.mode().startsWith("scan");
- view(`<div class="bar">${T("","Zurück zur Startseite","⌂ Start",'id="home"')}<div class="grow"><h1 class="hi">${p.face} Hallo ${esc(p.name)}!</h1></div></div>
+ view(`<div class="bar">${T("","Zurück zur Startseite","⌂ Start",'id="home"')}<div class="grow"><h1 class="hi">${p.face} Hallo ${esc(p.name)}!</h1></div>${albumBtn(p)}</div>
  ${subjBar(p)}
  <div class="chapters malen">${BOOKS.list.filter(bk=>bk.app).map(bk=>{const ms=MOTIFS.filter(m=>m.books.includes(bk.id));if(!ms.length)return "";
   return `<section class="chapter c5" aria-label="${bk.app}"><header class="chhead"><div class="badge">Aus dem Malbuch „${bk.t}“</div><h2>${bk.app}</h2><p>Farbe wählen und auf eine Fläche tippen</p></header>
@@ -469,7 +554,7 @@ function malMenu(){const p=P();PM=null;const scan=Input.mode().startsWith("scan"
  <header class="chhead"><h2>Meine Bilder</h2><p>${p.gallery.length?`${p.gallery.length} ${p.gallery.length===1?"Bild":"Bilder"}`:"Hier erscheinen deine fertigen Bilder."}</p></header>
  <div class="gallery">${p.gallery.map((g,i)=>T("gpic",`Mein Bild ${i+1}`,`<img src="${g.img}" alt="">`,`data-g="${i}"`)).join("")}</div>
  <p class="note books">📚 ${BOOKS.hint}</p></section></div>`,true);
- Speech.say("Was möchtest du malen?");Input.refresh();bindSubj(p);bind("home",home);bind("free",freePaint);
+ Speech.say("Was möchtest du malen?");Input.refresh();bindSubj(p);bind("home",home);bind("album",()=>album(menu));bind("free",freePaint);
  app.querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>paintOpen(MOTIFS.find(m=>m.id===b.dataset.m),malMenu));
  app.querySelectorAll("[data-g]").forEach(b=>b.onclick=()=>showPic(+b.dataset.g))}
 async function paintOpen(m,ret){const p=P();const prep=await prepMotif(m);const sv=p.paint&&p.paint[m.id];
@@ -509,10 +594,11 @@ function snapshot(){const cv=document.getElementById("pc"),t=document.createElem
 function addGallery(img,m){const p=P();p.gallery=[{img,m,ts:Date.now()},...(p.gallery||[])].slice(0,12);save()}
 function paintDone(){const img=snapshot();if(!PM.free&&!PM.cols.some(Boolean)){Speech.say("Male zuerst etwas an.");return}
  addGallery(img,PM.free?"frei":PM.m.id);const m=PM.m,free=PM.free,ret=PM.ret;
- view(`<div class="result"><h2>Toll gemalt!</h2><img class="donepic" src="${img}" alt="Dein fertiges Bild">
+ const got=giveSticker(P(),free?"frei:"+new Date().toDateString():"p:"+m.id,free?[]:[m.id]);
+ view(`<div class="result"><h2>Toll gemalt!</h2>${got?newSticker(got,true):""}<img class="donepic" src="${img}" alt="Dein fertiges Bild">
  <div class="rowbtns">${T("primary","Weiter malen","🎨 Weiter malen",'id="more"')}${T("","Drucken","🖨️ Drucken",'id="print"')}${T("","Zur Bildauswahl","Zur Bildauswahl",'id="menu"')}</div>
  <p class="note books">📚 ${BOOKS.hint}</p></div>`,true);
- Speech.say("Toll gemalt!");Input.refresh();
+ Speech.say(got?`Toll gemalt! Du bekommst einen Sticker: ${got.w}.`:"Toll gemalt!");Input.refresh();
  bind("more",()=>free?freePaint():paintOpen(m,ret));bind("print",()=>printImg(img,free?"Mein Bild":m.w));bind("menu",malMenu)}
 function showPic(i){const p=P(),g=p.gallery[i];if(!g)return malMenu();
  view(`<div class="result"><img class="donepic" src="${g.img}" alt="Mein Bild"><div class="rowbtns">${T("","Zurück","◀ Zurück",'id="menu"')}${T("","Drucken","🖨️ Drucken",'id="print"')}</div></div>`,true);
@@ -560,7 +646,7 @@ async function hydrateCrops(){for(const el of app.querySelectorAll("img.crop:not
  el.src=_cr[key]}}
 const craftBook=()=>BOOKS.list.find(b=>b.id===(CR.book||"einfach"));
 function bastelMenu(){const p=P();p.craft=p.craft||{};const bk=craftBook();
- view(`<div class="bar">${T("","Zurück zur Startseite","⌂ Start",'id="home"')}<div class="grow"><h1 class="hi">${p.face} Hallo ${esc(p.name)}!</h1></div></div>
+ view(`<div class="bar">${T("","Zurück zur Startseite","⌂ Start",'id="home"')}<div class="grow"><h1 class="hi">${p.face} Hallo ${esc(p.name)}!</h1></div>${albumBtn(p)}</div>
  ${subjBar(p)}
  <div class="chapters malen"><section class="chapter c6" aria-label="Basteln"><header class="chhead"><div class="badge">Aus dem Buch „${bk.t}“</div><h2>Basteln</h2><p>Schritt für Schritt: malen, schneiden, kleben</p></header>
  <div class="motifs">${CR.list.map(c=>{const st=p.craft[c.id];return T("motif",c.t,`<span class="mthumb">${cropImg(c.thumb)}</span><b>${c.t}</b><span class="stufe">${"●".repeat(c.lvl)}${"○".repeat(2-c.lvl)} Stufe ${c.lvl}</span>${st&&st.done?'<span class="chip okc">✓ geschafft</span>':st&&st.i?`<span class="chip">Schritt ${st.i+1} von ${c.steps.length}</span>`:""}`,`data-k="${c.id}"`)}).join("")}</div></section>
@@ -568,7 +654,7 @@ function bastelMenu(){const p=P();p.craft=p.craft||{};const bk=craftBook();
  <ul class="need">${["stift","schere","kleber","haken"].map(t=>`<li><span class="tool">${TOOL_SVG[t]}</span>${{stift:"Male das Bild an.",schere:"Schneide auf der Linie aus.",kleber:"Klebe das Teil auf.",haken:"Ich bin fertig."}[t]}</li>`).join("")}</ul>
  <p class="note">Für Erwachsene: Den Bastelbogen vorher ausdrucken, nur einseitig. Für Kinder eine Schere mit runder Spitze nehmen.</p>
  <p class="note books">📚 ${BOOKS.hint}</p></section></div>`,true);
- hydrateCrops();Speech.say("Was möchtest du basteln?");Input.refresh();bindSubj(p);bind("home",home);
+ hydrateCrops();Speech.say("Was möchtest du basteln?");Input.refresh();bindSubj(p);bind("home",home);bind("album",()=>album(menu));
  app.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>craftIntro(CR.list.find(c=>c.id===b.dataset.k)))}
 function craftIntro(c){const st=P().craft[c.id]||{};const need=c.need.map(t=>t==="bogen"&&c.pages.length>1?`${c.pages.length} Bastelbögen`:TOOL_NAME[t]);
  view(`<div class="bar">${T("","Zurück zum Basteln","◀ Basteln",'id="back"')}<div class="grow"><h1 class="hi">${c.t}</h1></div></div>
@@ -588,26 +674,62 @@ function craftStep(c,i){const s=c.steps[i],p=P();p.craft[c.id]={...(p.craft[c.id
  bind("back",bastelMenu);bind("again",()=>{Speech.say(say);Input.refresh()});bind("hear",()=>{Speech.say(say);Input.refresh()});
  bind("prev",()=>craftStep(c,Math.max(0,i-1)));bind("next",()=>last?craftDone(c):craftStep(c,i+1));
  bind("paint",()=>paintOpen(MOTIFS.find(m=>m.id===s.paint),()=>craftStep(c,i)))}
-function craftDone(c){const p=P();p.craft[c.id]={i:0,done:true};save();
- view(`<div class="result"><h2>Du hast es geschafft!</h2><div class="stars" role="img" aria-label="3 Sterne">${[0,1,2].map(k=>starSvg(true,k)).join("")}</div>
+function craftDone(c){const p=P();p.craft[c.id]={i:0,done:true};save();const got=giveSticker(p,"c:"+c.id,[]);
+ view(`<div class="result">${got?newSticker(got,true):""}<h2>Du hast es geschafft!</h2><div class="stars" role="img" aria-label="3 Sterne">${[0,1,2].map(k=>starSvg(true,k)).join("")}</div>
  <div class="cdone">${cropImg(c.steps[c.steps.length-1].img)}</div>
  <div class="rowbtns">${T("primary","Noch etwas basteln","✂️ Noch etwas basteln",'id="menu"')}${T("","Nochmal von vorn","↻ Nochmal",'id="again2"')}</div>
  <p class="note books">📚 ${BOOKS.hint}</p></div>`,true);
- hydrateCrops();Speech.say("Du hast es geschafft! Toll gemacht.");Input.refresh();bind("menu",bastelMenu);bind("again2",()=>craftStep(c,0))}
+ hydrateCrops();Speech.say(got?`Du hast es geschafft! Du bekommst einen Sticker: ${got.w}.`:"Du hast es geschafft! Toll gemacht.");Input.refresh();bind("menu",bastelMenu);bind("again2",()=>craftStep(c,0))}
 function printPages(srcs){let pr=document.getElementById("print-area");if(!pr){pr=document.createElement("div");pr.id="print-area";document.body.appendChild(pr)}
  pr.innerHTML=srcs.map(s=>`<div class="ppage"><img src="${s}" alt=""></div>`).join("");
  const ims=[...pr.querySelectorAll("img")];Promise.all(ims.map(im=>im.complete?1:new Promise(r=>{im.onload=im.onerror=r}))).then(()=>{try{window.print()}catch(e){}})}
 
 let editId=null,delArm=false;
 function adult(){S.cur=null;editId=editId&&S.profiles.find(p=>p.id===editId)?editId:S.profiles[0]?.id;delArm=false;renderAdult()}
+let adultTab="stand";
+const names={entdecken:"Entdecken",anlaut:"Anlaut",wortbild:"Wort & Bild",silben:"Silben entdecken",hoeren:"Silbe hören",bauen:"Wörter bauen",zentdecken:"Zahlen entdecken",wieviele:"Wie viele?",zhoeren:"Zahl hören",sogehts:"So geht's",bildrechnen:"Rechnen mit Bildern",rechnen:"Rechnen",satzlesen:"Sätze lesen",satzbild:"Satz und Bild",luecke:"Lückensatz"};const lnum=id=>{const x=LESSONS.find(y=>y.id===id);return x?lname(x)+" · ":""};
+/* Lernstand: was sitzt, was übt das Kind noch? Grundlage sind die erfassten ersten Versuche (track) */
+function lernstand(p){const it=p.items||{};
+ const agg=keys=>keys.reduce((a,k)=>{const v=it[k];if(v){a[0]+=v[0];a[1]+=v[1]}return a},[0,0]);
+ const cls=([ok,n])=>!n?"none":n>=2&&ok/n>=.8?"good":ok/n<.6?"weak":"mid";
+ const tip=([ok,n])=>n?`${ok} von ${n} beim ersten Versuch richtig`:"noch nicht geübt";
+ const chip=(label,a,learn)=>`<span class="lchip ${cls(a)}${learn?" learn":""}" title="${tip(a)}">${esc(label)}<small>${a[1]?Math.round(a[0]/a[1]*100)+" %":"–"}</small></span>`;
+ const keysOf=pre=>Object.keys(it).filter(k=>k.startsWith(pre));
+ const sylls=[...new Set(LESSONS.flatMap(x=>x.sylls||[]))];
+ const dec=[...Array(10)].map((_,d)=>[d*10,d*10+9]);
+ const calcL=LESSONS.filter(x=>x.calc);
+ const pretty=k=>{const [t,...r]=k.split(":");const v=r.join(":");
+  return t==="T"?`Satz „${v}“`:t==="B"?`Buchstabe ${v}`:t==="S"?`Silbe ${v}`:t==="W"?`Wort „${v}“`:t==="Z"?`Zahl ${v}`:t==="R"?`Aufgabe ${v.split(":")[1].replace(/([+-])/," $1 ").replace("-","−")}`:k};
+ const weak=Object.entries(it).filter(([,v])=>v[1]>=2&&v[0]/v[1]<.6).sort((a,b)=>a[1][0]/a[1][1]-b[1][0]/b[1][1]).slice(0,8);
+ const done=LESSONS.filter(x=>doneCount(p,x)===3).length,last=p.log.length?new Date(p.log[p.log.length-1].ts).toLocaleDateString("de-DE"):"–";
+ const tile=(v,l)=>`<div class="tile"><b>${v}</b><span>${l}</span></div>`;
+ return `<div class="lstand">
+ <div class="tiles">${tile(`${done} / ${LESSONS.length}`,"Lektionen geschafft")}${tile(starsOf(p),"Sterne")}${tile(`${(p.stickers||[]).length} / ${MOTIFS.length}`,"Sticker")}${tile(last,"zuletzt gespielt")}</div>
+ <p class="legend"><span class="lchip good">sitzt</span><span class="lchip mid">fast</span><span class="lchip weak">übt noch</span><span class="lchip none">noch nicht geübt</span> · Prozent = beim ersten Versuch richtig</p>
+ <section><h2>Übt noch</h2>${weak.length?`<ul class="weak">${weak.map(([k,v])=>`<li><b>${esc(pretty(k))}</b> – ${tip(v)}</li>`).join("")}</ul>`:`<p class="note">Noch nichts auffällig. Hier erscheint, was beim ersten Versuch oft danebengeht.</p>`}</section>
+ <section><h2>Buchstaben</h2><div class="lchips">${LETTERS.map(l=>chip(l,agg(["B:"+l]),true)).join("")}</div></section>
+ <section><h2>Silben</h2><div class="lchips">${sylls.map(x=>chip(x,agg(["S:"+x]),true)).join("")}</div></section>
+ <section><h2>Zahlen</h2><div class="lchips">${dec.map(([a,b])=>chip(`${a}–${b}`,agg(keysOf("Z:").filter(k=>{const n=+k.slice(2);return n>=a&&n<=b})))).join("")}${chip("100",agg(["Z:100"]))}</div></section>
+ <section><h2>Rechnen</h2><div class="lchips">${calcL.map(x=>chip(x.t,agg(keysOf("R:"+x.id+":")))).join("")}</div></section>
+<section><h2>Sätze</h2><div class="lchips">${LESSONS.filter(x=>x.sent).map(x=>chip(x.t,agg(x.items.map(y=>"T:"+sentText(y))))).join("")}</div></section>
+ ${keysOf("W:").length?`<section><h2>Wörter bauen</h2><div class="lchips">${keysOf("W:").map(k=>chip(k.slice(2),agg([k]),true)).join("")}</div></section>`:""}
+ <div class="stats"><b>Lektionen</b><table>${LESSONS.map((x,i)=>{const g=lp(p,x);return `<tr><td>${lname(x)}</td><td>${x.t}</td><td>${"★".repeat(doneCount(p,x))}${"☆".repeat(3-doneCount(p,x))}</td></tr>`}).join("")}</table><b>Zuletzt gespielt</b>${p.log.length?`<table>${p.log.slice(-6).reverse().map(r=>`<tr><td>${new Date(r.ts).toLocaleDateString("de-DE")}</td><td>${lnum(r.l)}${names[r.g]||r.g}</td><td>${r.ok} von ${r.n} beim ersten Versuch</td></tr>`).join("")}</table>`:"<p>Noch keine Runden.</p>"}</div>
+ </div>`}
 function renderAdult(){const p=S.profiles.find(x=>x.id===editId);
  const sel=(id,label,val,opts)=>`<label class="f">${label}<select id="${id}">${opts.map(([v,t])=>`<option value="${v}" ${String(v)===String(val)?"selected":""}>${t}</option>`).join("")}</select></label>`;
  const chk=(id,label,val)=>`<label class="c"><input type="checkbox" id="${id}" ${val?"checked":""}>${label}</label>`;
- const names={entdecken:"Entdecken",anlaut:"Anlaut",wortbild:"Wort & Bild",silben:"Silben entdecken",hoeren:"Silbe hören",bauen:"Wörter bauen",zentdecken:"Zahlen entdecken",wieviele:"Wie viele?",zhoeren:"Zahl hören",sogehts:"So geht's",bildrechnen:"Rechnen mit Bildern",rechnen:"Rechnen"};const lnum=id=>{const x=LESSONS.find(y=>y.id===id);return x?lname(x)+" · ":""};
- view(`<div class="bar"><button class="plain" id="out">⌂ Zurück zum Kinderbereich</button><div class="grow"><h1>Einstellungen für Erwachsene</h1></div></div>
+ const tabs=[["stand","📊 Lernstand"],["set","⚙️ Einstellungen"],["druck","🖨️ Drucken & Bücher"]];
+ view(`<div class="bar"><button class="plain" id="out">⌂ Zurück zum Kinderbereich</button><div class="grow"><h1>Bereich für Erwachsene</h1></div></div>
  <div class="adult"><div class="plist">${S.profiles.map(x=>`<button data-id="${x.id}" aria-current="${x.id===editId}">${x.face} ${esc(x.name)}${x.example?' <span class="badge">Beispiel</span>':""}</button>`).join("")}
  <button class="plain" id="add">＋ Neues Profil</button></div>
- ${p?`<form class="settings" id="f">
+ ${p?`<div class="apane"><div class="atabs" role="tablist">${tabs.map(([k,t])=>`<button type="button" role="tab" data-tab="${k}" aria-selected="${adultTab===k}">${t}</button>`).join("")}</div>
+ ${adultTab==="stand"?lernstand(p):adultTab==="druck"?`<form class="settings" id="f"><fieldset><legend>Malen und Basteln</legend><p class="note" style="grid-column:1/-1;margin:0">Ausmalbilder zum Ausdrucken, ohne Farbe. Mehr davon gibt es in den Malbüchern von Tim Kipper.</p>
+ <div class="letters">${MOTIFS.map(m=>`<button type="button" class="plain" data-pm="${m.id}">🖨️ ${m.w}</button>`).join("")}</div>
+ <p class="note" style="grid-column:1/-1;margin:0">Bastelbögen zum Ausdrucken (einseitig):</p>
+ <div class="letters">${CR.list.map(c=>`<button type="button" class="plain" data-pk="${c.id}">🖨️ ${c.t}</button>`).join("")}</div>
+ <div style="grid-column:1/-1"><button type="button" class="plain danger" id="delpics">${p.gallery&&p.gallery.length?`Gemalte Bilder löschen (${p.gallery.length})`:"Noch keine gemalten Bilder"}</button></div></fieldset>
+ <div class="stats books"><b>📚 ${BOOKS.name}</b><p>Alle Ausmalbilder in der App stammen aus diesen Büchern. Zum Ausdrucken und Weitermalen auf Papier:</p>
+ <ul>${BOOKS.list.map(bk=>`<li><b>„${bk.t}“</b> – ${bk.d}</li>`).join("")}</ul></div></form>`:`<form class="settings" id="f">
  <fieldset><legend>Kind</legend><label class="f">Name<input type="text" id="name" value="${esc(p.name)}"></label>
  ${sel("face","Symbol",p.face,FACES.map(f=>[f,f]))}</fieldset>
  <fieldset><legend>Bedienung</legend>
@@ -624,24 +746,17 @@ function renderAdult(){const p=S.profiles.find(x=>x.id===editId);
  ${sel("size","Größe",p.size,[["normal","normal"],["gross","groß"],["sehrgross","sehr groß"]])}
  ${sel("rate","Sprechtempo",p.rate,[[0.7,"langsam"],[0.9,"normal"],[1.1,"zügig"]])}
  ${chk("tts","Sprachausgabe",p.tts)}${chk("hc","Hoher Kontrast",p.hc)}${chk("calm","Ruhig (keine Animationen)",p.calm)}</fieldset>
- <div class="stats"><b>Lektionen</b><table>${LESSONS.map((x,i)=>{const g=lp(p,x);return `<tr><td>${lname(x)}</td><td>${x.t}</td><td>${"★".repeat(doneCount(p,x))}${"☆".repeat(3-doneCount(p,x))}</td></tr>`}).join("")}</table><b>Zuletzt gespielt</b>${p.log.length?`<table>${p.log.slice(-6).reverse().map(r=>`<tr><td>${new Date(r.ts).toLocaleDateString("de-DE")}</td><td>${lnum(r.l)}${names[r.g]||r.g}</td><td>${r.ok} von ${r.n} beim ersten Versuch</td></tr>`).join("")}</table>`:"<p>Noch keine Runden.</p>"}</div>
- <fieldset><legend>Malen und Basteln</legend><p class="note" style="grid-column:1/-1;margin:0">Ausmalbilder zum Ausdrucken, ohne Farbe. Mehr davon gibt es in den Malbüchern von Tim Kipper.</p>
- <div class="letters">${MOTIFS.map(m=>`<button type="button" class="plain" data-pm="${m.id}">🖨️ ${m.w}</button>`).join("")}</div>
- <p class="note" style="grid-column:1/-1;margin:0">Bastelbögen zum Ausdrucken (einseitig):</p>
- <div class="letters">${CR.list.map(c=>`<button type="button" class="plain" data-pk="${c.id}">🖨️ ${c.t}</button>`).join("")}</div>
- <div style="grid-column:1/-1"><button type="button" class="plain danger" id="delpics">${p.gallery&&p.gallery.length?`Gemalte Bilder löschen (${p.gallery.length})`:"Noch keine gemalten Bilder"}</button></div></fieldset>
- <div class="stats books"><b>📚 ${BOOKS.name}</b><p>Alle Ausmalbilder in der App stammen aus diesen Büchern. Zum Ausdrucken und Weitermalen auf Papier:</p>
- <ul>${BOOKS.list.map(bk=>`<li><b>„${bk.t}“</b> – ${bk.d}</li>`).join("")}</ul></div>
  <div><button class="plain danger" id="del">${delArm?"Wirklich löschen? Nochmal tippen":"Profil löschen"}</button></div>
- </form>`:"<p>Lege ein Profil an.</p>"}</div>`,false);
+ </form>`}</div>`:"<p>Lege ein Profil an.</p>"}</div>`,false);
  bind("out",home);bind("add",()=>{const id="p"+Date.now();S.profiles.push({...clone(DEF),id,name:"Neues Kind",face:FACES[S.profiles.length%FACES.length]});editId=id;save();renderAdult()});
  app.querySelectorAll(".plist [data-id]").forEach(b=>b.onclick=()=>{editId=b.dataset.id;delArm=false;renderAdult()});
+app.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{adultTab=b.dataset.tab;renderAdult()});
  if(!p)return;
  app.querySelectorAll("[data-pm]").forEach(b=>b.onclick=()=>{const m=MOTIFS.find(x=>x.id===b.dataset.pm);printImg(motifUrl(m),m.w+" – zum Ausmalen")});
  app.querySelectorAll("[data-pk]").forEach(b=>b.onclick=()=>{const c=CR.list.find(x=>x.id===b.dataset.pk);printPages(c.pages.map(k=>CR.pages[k]))});
  bind("delpics",()=>{if(!p.gallery||!p.gallery.length)return;p.gallery=[];p.paint={};save();renderAdult()});
  bind("del",()=>{if(!delArm){delArm=true;renderAdult();return}S.profiles=S.profiles.filter(x=>x.id!==p.id);editId=S.profiles[0]?.id;save();renderAdult()});
- const f=document.getElementById("f");f.addEventListener("submit",e=>e.preventDefault());
+ const f=document.getElementById("f");if(!f)return;f.addEventListener("submit",e=>e.preventDefault());
  f.addEventListener("input",e=>{const el=e.target;if(el.dataset.l){p.letters=[...f.querySelectorAll("[data-l]:checked")].map(x=>x.dataset.l)}
   else if(el.type==="checkbox")p[el.id]=el.checked;
   else if(el.id==="name")p.name=el.value;

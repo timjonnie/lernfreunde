@@ -155,6 +155,17 @@ export const MOTIFS = [
   "src": "assets/motifs/s_apfelbaum.png"
  },
  {
+  "id": "s_dino",
+  "w": "Dino",
+  "l": "",
+  "books": [
+   "spass"
+  ],
+  "n": 16,
+  "lvl": 2,
+  "src": "assets/motifs/s_dino.png"
+ },
+ {
   "id": "l_apfel",
   "w": "Apfel",
   "l": "A",
@@ -336,5 +347,71 @@ export const MOTIFS = [
   "n": 10,
   "lvl": 1,
   "src": "assets/motifs/l_loewe.png"
+ },
+ {
+  "id": "l_chamaeleon",
+  "w": "Chamäleon",
+  "l": "C",
+  "books": [
+   "lernen"
+  ],
+  "n": 21,
+  "lvl": 3,
+  "src": "assets/motifs/l_chamaeleon.png"
+ },
+ {
+  "id": "l_jacke",
+  "w": "Jacke",
+  "l": "J",
+  "books": [
+   "lernen"
+  ],
+  "n": 17,
+  "lvl": 2,
+  "src": "assets/motifs/l_jacke.png"
+ },
+ {
+  "id": "l_vogel",
+  "w": "Vogel",
+  "l": "V",
+  "books": [
+   "lernen"
+  ],
+  "n": 3,
+  "lvl": 1,
+  "src": "assets/motifs/l_vogel.png"
+ },
+ {
+  "id": "l_xylofon",
+  "w": "Xylofon",
+  "l": "X",
+  "books": [
+   "lernen"
+  ],
+  "n": 46,
+  "lvl": 3,
+  "src": "assets/motifs/l_xylofon.png"
+ },
+ {
+  "id": "l_yak",
+  "w": "Yak",
+  "l": "Y",
+  "books": [
+   "lernen"
+  ],
+  "n": 15,
+  "lvl": 2,
+  "src": "assets/motifs/l_yak.png"
+ },
+ {
+  "id": "l_qualle",
+  "w": "Qualle",
+  "l": "Q",
+  "books": [
+   "lernen"
+  ],
+  "n": 15,
+  "lvl": 2,
+  "src": "assets/motifs/l_qualle.png"
  }
 ];

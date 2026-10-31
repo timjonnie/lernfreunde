@@ -1,6 +1,6 @@
 /* Liste aller Texte, die die App spricht (Schlüssel = normalisierter Text).
    Grundlage für scripts/generate-voice.mjs; ohne Browser nutzbar. */
-import { WORDS, LETTERS, LESSONS, GAMES, PRAISE, COLORS, TOOL_NAME, LAUT } from "./content.js";
+import { WORDS, LETTERS, LESSONS, GAMES, PRAISE, COLORS, TOOL_NAME, LAUT, sentText, gapWord } from "./content.js";
 import { MOTIFS as MOTIF_LIST } from "./data/motifs.js";
 import { CRAFTS } from "./data/crafts.js";
 
@@ -16,7 +16,7 @@ export function voiceInventory(){const out=[],seen=new Set();const add=(t,cat)=>
   "Super gemacht!","Gut geübt!","geschafft!","Du hast alle Buchstaben angeschaut!","Du hast alle Silben angeschaut!",
   "Du hast alle Zahlen angeschaut!","Du kennst jetzt den Rechenweg!","Zurück zur Startseite.","Zurück zu den Lektionen.","Zurück zur Lektion.",
   "Nochmal hören.","Hören.","Weiter.","Zurück.","Nochmal erklären.","Nochmal spielen.","Nächste Lektion.","Zur Lektion.","noch gesperrt",
-  "Lesen.","Zahlen und Rechnen.","Malen.","Was möchtest du malen?","Wähle eine Farbe.","Wähle eine Farbe. Dann tippe auf eine Fläche.","Wähle zuerst eine Farbe.","Andere Farbe.","Toll gemalt!","Weiter malen.","Drucken.","Zur Bildauswahl.","Rückgängig.","Fertig.","Male zuerst etwas an.","Male mit dem Finger.","Freies Malen.","Neues Blatt.","Nochmal tippen, dann ist das Blatt leer.",...COLORS.map(c=>c[0]+"."),...MOTIF_LIST.map(m=>m.w+"."),"Basteln.","Was möchtest du basteln?","Das brauchst du:","Los geht's.","Bastelbogen drucken.","Du hast es geschafft! Toll gemacht.","Noch etwas basteln.","Erst in der App ausmalen.","Nochmal von vorn.","Zurück zum Basteln.",...Object.values(TOOL_NAME).map(t=>t+"."),"Bastelbögen.",...CRAFTS.list.flatMap(c=>[c.t+".",...c.steps.map(s=>s.text)])];
+  "Lesen.","Zahlen und Rechnen.","Malen.","Was möchtest du malen?","Wähle eine Farbe.","Wähle eine Farbe. Dann tippe auf eine Fläche.","Wähle zuerst eine Farbe.","Andere Farbe.","Toll gemalt!","Weiter malen.","Drucken.","Zur Bildauswahl.","Rückgängig.","Fertig.","Male zuerst etwas an.","Male mit dem Finger.","Freies Malen.","Neues Blatt.","Nochmal tippen, dann ist das Blatt leer.",...COLORS.map(c=>c[0]+"."),...MOTIF_LIST.map(m=>m.w+"."),"Basteln.","Was möchtest du basteln?","Das brauchst du:","Los geht's.","Bastelbogen drucken.","Du hast es geschafft! Toll gemacht.","Noch etwas basteln.","Erst in der App ausmalen.","Nochmal von vorn.","Zurück zum Basteln.","Du bekommst einen Sticker:","Sticker-Album.","Dein Sticker-Album.","Du hast","Sticker.","Toll gemalt!","Du hast es geschafft!",...Object.values(TOOL_NAME).map(t=>t+"."),"Bastelbögen.",...CRAFTS.list.flatMap(c=>[c.t+".",...c.steps.map(s=>s.text)])];
  PRAISE.forEach(t=>add(t,"saetze"));PH.forEach(t=>add(t,"saetze"));
  LESSONS.forEach(x=>add(x.t+".","saetze"));Object.values(GAMES).forEach(g=>add(g.t+".","saetze"));
  for(let n=0;n<=100;n++)add(n+".","zahlen");
@@ -24,5 +24,7 @@ export function voiceInventory(){const out=[],seen=new Set();const add=(t,cat)=>
  LETTERS.forEach(l=>{if(LAUT[l])add(LAUT[l]+".","laute")});
  const syl=new Set();LESSONS.forEach(x=>{(x.sylls||[]).forEach(s=>syl.add(s.toLowerCase()));(x.words||[]).forEach(w=>w.segs.forEach(s=>syl.add(s.toLowerCase())))});
  syl.forEach(s=>add(s[0].toUpperCase()+s.slice(1)+".","silben"));
+ LESSONS.forEach(x=>(x.items||[]).forEach(y=>{add(sentText(y),"saetze");add(gapWord(y)+".","woerter")}));
+ ["Du hast alle Sätze gelesen!","Welches Wort fehlt?","Lies den Satz. Welches Bild passt?","Welches Bild passt?"].forEach(t=>add(t,"saetze"));
  WORDS.forEach(w=>add(w.w+".","woerter"));LESSONS.forEach(x=>(x.words||[]).forEach(w=>add(w.w+".","woerter")));
  return out}

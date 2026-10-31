@@ -23,15 +23,21 @@ im Web und als App im App Store und bei Google Play.
   Laut-Tabelle in `src/content.js` (`LAUT`); nach den ersten Aufnahmen anhören und nachschärfen,
   besonders die kurzen Laute B, D, G, K, P, T.
 
-## Phase 3 – Gestaltung und Bedienung (UI/UX)
-- Einheitliches Erscheinungsbild, eigene Figur/Maskottchen statt Emojis
-- Klarere Belohnungen und Fortschritt für Kinder
-- Übersichtlicher Erwachsenenbereich mit Lernstand-Auswertung
-- Offline nutzbar (installierbare Web-App)
+## Phase 3 – Gestaltung und Bedienung (UI/UX) (läuft)
+- ✅ Tim-Kipper-CI: App-Icon, Favicon, Farben (Nachtblau, Buntstift-Orange), Schrift Lexend
+- ✅ Maskottchen: der Dino aus „Mal mit mir!“ in CI-Farben – Startseite, Ergebnis-Bildschirm, als Ausmalbild
+- ✅ Neue Startseite: Wortmarke, Dino mit Sprechblase, Kinder-Karten mit Sternen und „Weiter bei …“
+- ✅ Sticker-Album: 31 Sticker aus den Malbüchern für geschaffte Lektionen, fertige Bilder und Bastelarbeiten
+- ✅ Erwachsenenbereich mit Reitern (Lernstand, Einstellungen, Drucken & Bücher); Lernstand pro
+  Buchstabe, Silbe, Zahlenbereich, Rechenart und Wort – „sitzt / fast / übt noch“, Liste „Übt noch“
+- ✅ Offline nutzbar und installierbar (Service Worker über vite-plugin-pwa, Manifest, Icons)
 
 ## Phase 4 – Inhalte vervollständigen
-- Lesen: fehlende Buchstaben (C, J, V, X, Y, Q, Ä, Ö, Ü, ß) und Laute (Sch, Ei, Au, Eu, Ch, Pf, Qu),
-  Klein-/Großbuchstaben, erste Sätze lesen
+- ✅ Lesen: neue Lektionen J V C, X Y Q und SCH EI AU – mit Motiven aus „Malen und lernen“
+  (Chamäleon, Jacke, Vogel, Xylofon, Yak, Qualle) als Bilder, Ausmalbilder und Sticker
+- ✅ Anlaut korrigiert: Auto, Eis, Ei gehören zu AU/EI statt A/E
+- ✅ Kapitel „Sätze“: 2 Lektionen mit 12 Sätzen – Sätze lesen (Wort für Wort vorgelesen), Satz und Bild, Lückensatz
+- Lesen: Ä, Ö, Ü, ß, EU, CH, PF im Wort
 - Rechnen: Zehnerübergang, Rechnen bis 100, Einmaleins
 - Weitere Ausmalbilder und Bastelideen aus den Büchern
 

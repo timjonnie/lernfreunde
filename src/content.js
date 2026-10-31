@@ -1,14 +1,20 @@
 /* Lerninhalte: Wörter, Lektionen, Spiele, Farben. Reine Daten – ohne Browser nutzbar (auch für Skripte). */
+/* Wörter zum Anlaut: [Wort, Bild] – Bild ist ein Emoji oder "img:<Sticker-ID>" (Motiv aus den Malbüchern);
+   bei Lauten aus mehreren Buchstaben (SCH, EI, AU) steht der Laut als drittes Feld */
 export const WORDS=[
- ["Maus","🐭"],["Mond","🌙"],["Melone","🍉"],["Apfel","🍎"],["Affe","🐒"],["Auto","🚗"],["Ameise","🐜"],
+ ["Maus","🐭"],["Mond","🌙"],["Melone","🍉"],["Apfel","🍎"],["Affe","🐒"],["Ananas","🍍"],["Ameise","🐜"],
  ["Oma","👵"],["Ohr","👂"],["Orange","🍊"],["Oktopus","🐙"],
- ["Löwe","🦁"],["Löffel","🥄"],["Igel","🦔"],["Insel","🏝️"],["Ente","🦆"],["Eis","🍦"],["Elefant","🐘"],["Ei","🥚"],
+ ["Löwe","🦁"],["Löffel","🥄"],["Igel","🦔"],["Insel","🏝️"],["Ente","🦆"],["Erdbeere","🍓"],["Elefant","🐘"],
  ["Uhr","⏰"],["Uhu","🦉"],["Ufo","🛸"],["Nase","👃"],["Nuss","🥜"],["Rakete","🚀"],["Rose","🌹"],["Rad","🚲"],
  ["Sonne","☀️"],["Socke","🧦"],["Tomate","🍅"],["Tiger","🐅"],["Tasse","☕"],["Hund","🐕"],["Haus","🏠"],["Hut","🎩"],
  ["Ball","⚽"],["Banane","🍌"],["Baum","🌳"],["Fisch","🐟"],["Feuer","🔥"],["Fuchs","🦊"],["Katze","🐈"],["Kuh","🐄"],["Kerze","🕯️"],
  ["Pilz","🍄"],["Pinguin","🐧"],["Dino","🦕"],["Daumen","👍"],["Giraffe","🦒"],["Gurke","🥒"],["Wal","🐋"],["Wolke","☁️"],
- ["Zug","🚆"],["Zitrone","🍋"],["Zebra","🦓"]
-].map(([w,e])=>({w,e,l:w[0].toUpperCase()}));
+ ["Zug","🚆"],["Zitrone","🍋"],["Zebra","🦓"],
+ ["Jacke","img:l_jacke"],["Jo-Jo","🪀"],["Vogel","img:l_vogel"],["Vulkan","🌋"],["Clown","🤡"],["Chamäleon","img:l_chamaeleon"],
+ ["Xylofon","img:l_xylofon"],["Yak","img:l_yak"],["Yoga","🧘"],["Qualle","img:l_qualle"],["Quadrat","🟥"],
+ ["Schaf","🐑","SCH"],["Schuh","👟","SCH"],["Schere","✂️","SCH"],["Schnecke","🐌","SCH"],
+ ["Eis","🍦","EI"],["Ei","🥚","EI"],["Eimer","🪣","EI"],["Auto","🚗","AU"],["Auge","👁️","AU"]
+].map(([w,e,l])=>({w,e,l:l||w[0].toUpperCase()}));
 export const LETTERS=[...new Set(WORDS.map(x=>x.l))];
 /* Lektionen in Fibel-Reihenfolge: erst gut hörbare, dehnbare Laute, dann Stopplaute */
 export const LESSONS=[
@@ -18,6 +24,9 @@ export const LESSONS=[
  {id:"l4",t:"Zischen und Hauchen",ls:["S","T","H"]},
  {id:"l5",t:"Kurze Laute",ls:["B","F","K"]},
  {id:"l6",t:"Die letzten Buchstaben",ls:["P","D","G","W","Z"]},
+ {id:"l8",t:"Neue Buchstaben",ls:["J","V","C"]},
+ {id:"l9",t:"Seltene Buchstaben",ls:["X","Y","Q"]},
+ {id:"l10",t:"Zwei Buchstaben, ein Laut",ls:["SCH","EI","AU"]},
  {id:"l7",t:"Buchstaben wiederholen",ls:LETTERS.slice(),review:true},
  /* Silben: zuerst offene Silben (Konsonant + Vokal), dann ganze Wörter in Silben, zum Schluss lange Wörter */
  {id:"s1",t:"Silben mit M und L",syl:true,cv:true,show:"MA LI",sylls:["MA","MO","MI","ME","LA","LO","LI","LE"],
@@ -31,6 +40,13 @@ export const LESSONS=[
  {id:"s5",t:"Lange Wörter",syl:true,show:"GI·RAF·FE",
   words:[["Gi-raf-fe","🦒"],["Pin-gu-in","🐧"],["E-le-fant","🐘"],["Zi-tro-ne","🍋"],["Ok-to-pus","🐙"],["Ba-na-ne","🍌"]]},
  /* Zahlen: Menge (Zehnerfeld bzw. Zehnerstangen), Zahlwort und Ziffer verbinden */
+ /* Sätze: kurze Sätze aus bekannten Wörtern; das Wort in [ ] ist die Lücke beim Lückensatz */
+ {id:"t1",t:"Erste Sätze",sent:true,show:"Oma hat Eis.",games:["satzlesen","satzbild","luecke"],items:[
+  {t:"Oma hat [Eis].",e:"👵🍦"},{t:"Die [Maus] ist im Haus.",e:"🐭🏠"},{t:"Mama liest ein [Buch].",e:"👩📖"},
+  {t:"Das [Lama] trinkt Limo.",e:"🦙🥤"},{t:"Der [Hund] schläft.",e:"🐕💤"},{t:"Die [Sonne] scheint.",e:"☀️😎"}]},
+ {id:"t2",t:"Mehr Sätze",sent:true,show:"Tim malt einen Dino.",games:["satzlesen","satzbild","luecke"],items:[
+  {t:"Der Fisch schwimmt im [Wasser].",e:"🐟🌊"},{t:"Tim malt einen [Dino].",e:"🖍️🦕"},{t:"Das Auto ist [rot].",e:"🚗"},
+  {t:"Die Katze spielt mit dem [Ball].",e:"🐈⚽"},{t:"Der Vogel sitzt auf dem [Baum].",e:"🐦🌳"},{t:"Im Winter ist es [kalt].",e:"⛄❄️"}]},
  {id:"z1",t:"Zahlen bis 10",num:true,show:"0 – 10",range:[0,10],pages:[0,1,2,3,4,5,6,7,8,9,10],games:["zentdecken","wieviele","zhoeren"]},
  {id:"z2",t:"Zahlen bis 20",num:true,show:"10 – 20",range:[10,20],pages:[10,11,12,13,14,15,16,17,18,19,20],games:["zentdecken","wieviele","zhoeren"]},
  {id:"z3",t:"Zahlen bis 50",num:true,show:"20 – 50",range:[20,50],pages:[20,23,30,34,40,46,50],games:["zentdecken","wieviele","zhoeren"]},
@@ -47,6 +63,9 @@ LESSONS.forEach(x=>{if(!x.syl)return;x.words=x.words.map(([s,e])=>({segs:s.split
  x.games=["silben","hoeren","bauen"]});
 LESSONS.forEach(x=>{if(!x.games)x.games=["entdecken","anlaut","wortbild"]});
 export const GAMES={
+ satzlesen:{t:"Sätze lesen",d:"Sätze ansehen, hören und mitlesen"},
+ satzbild:{t:"Satz und Bild",d:"Den Satz lesen und das passende Bild finden"},
+ luecke:{t:"Lückensatz",d:"Welches Wort fehlt im Satz?"},
  entdecken:{t:"Buchstaben entdecken",d:"Buchstabe, Bild und Wort ansehen und hören"},
  anlaut:{t:"Anlaut finden",d:"Womit fängt das Wort an?"},
  wortbild:{t:"Wort und Bild",d:"Das Wort lesen und das passende Bild finden"},
@@ -68,6 +87,10 @@ export const TOOL_NAME={schere:"Schere",stift:"Stifte",kleber:"Kleber",bogen:"Ba
    Schreibweise so gewählt, dass Sprachausgaben den Laut statt des Buchstabennamens sprechen.
    Klingt ein Laut falsch: hier anpassen, den Clip in public/assets/voice löschen, „Stimmen erzeugen“ neu starten. */
 export const LAUT={A:"aaa",E:"eee",I:"iii",O:"ooo",U:"uuu",M:"mmmm",N:"nnnn",L:"llll",R:"rrrr",S:"ssss",F:"ffff",W:"wwww",H:"hhh",Z:"tsss",
- B:"bö",D:"dö",G:"gö",K:"kö",P:"pö",T:"tö"};
+ B:"bö",D:"dö",G:"gö",K:"kö",P:"pö",T:"tö",
+ J:"jjj",V:"ffff",C:"kö",X:"ks",Y:"jjj",Q:"kwö",SCH:"schhh",EI:"ei",AU:"au"};
 /* Was gesprochen wird, wenn ein Buchstabe vorkommt – je nach Einstellung Laut oder Buchstabenname */
 export const sayL=(l,laut=true)=>laut&&LAUT[l]?LAUT[l]:l;
+/* Satz ohne Lücken-Markierung, Lückenwort */
+export const sentText=x=>x.t.replace(/[\[\]]/g,"");
+export const gapWord=x=>x.t.match(/\[(.+?)\]/)[1];
