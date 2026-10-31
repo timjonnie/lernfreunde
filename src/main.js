@@ -6,7 +6,7 @@ import "@fontsource/atkinson-hyperlegible/700.css";
 import { VOICE as VOICE_CLIPS } from "./data/voice.js";
 import { MOTIFS as MOTIF_LIST } from "./data/motifs.js";
 import { CRAFTS } from "./data/crafts.js";
-import { WORDS, LETTERS, LESSONS, GAMES, PRAISE, ROUND, COLORS, TOOL_NAME } from "./content.js";
+import { WORDS, LETTERS, LESSONS, GAMES, PRAISE, ROUND, COLORS, TOOL_NAME, sayL } from "./content.js";
 import { normT } from "./voice-inventory.js";
 
 /* Zeigt einen Hinweis statt einer leeren Seite, falls beim Start etwas schiefgeht */
@@ -17,7 +17,7 @@ const learnedSylls=L=>{const i=LESSONS.indexOf(L);return [...new Set(LESSONS.sli
 
 /* ---------- Speicher ---------- */
 const clone=x=>JSON.parse(JSON.stringify(x));
-const DEF={subject:"lesen",name:"",face:"🦊",mode:"touch",scanMs:2000,dwellMs:1500,scanSpeak:true,choices:3,caps:true,size:"normal",hc:false,calm:false,tts:true,rate:0.9,autoRead:true,sequential:false,prog:{},log:[],paint:{},gallery:[],craft:{}};
+const DEF={subject:"lesen",name:"",face:"🦊",mode:"touch",scanMs:2000,dwellMs:1500,scanSpeak:true,choices:3,caps:true,laut:true,size:"normal",hc:false,calm:false,tts:true,rate:0.9,autoRead:true,sequential:false,prog:{},log:[],paint:{},gallery:[],craft:{}};
 const FACES=["🦊","🐻","🐼","🐸","🦉","🐢","🐙","🦄"];
 let S={profiles:[],cur:null};
 function load(){try{const r=localStorage.getItem("lernfreunde.v1");if(r)S=JSON.parse(r)}catch(e){}
@@ -193,7 +193,7 @@ function start(type){if(L.syl)return startSyl(type);if(L.num)return startNum(typ
 const dotsN=(n,i)=>`<div class="dots" aria-label="${i+1} von ${n}">${Array.from({length:n},(_,k)=>`<span class="${k<i?"done":k===i?"now":""}"></span>`).join("")}</div>`;
 const topbar=(mid,again=true)=>`<div class="bar">${T("","Zurück zur Lektion","◀ Lektion",'id="back"')}<div class="grow">${mid}</div>${again?T("","Nochmal hören","🔊 Nochmal",'id="again"'):""}</div>`;
 
-function discover(){const w=G.pages[G.i],l=w.l,word=fmt(w.w),text=`${l} wie ${w.w}.`;
+function discover(){const w=G.pages[G.i],l=w.l,word=fmt(w.w),text=`${sayL(l,P().laut)} wie ${w.w}.`;
  view(`${topbar(dotsN(G.pages.length,G.i),false)}
  <div class="stage"><div class="prompt" style="flex:1"><div class="letter">${fmtL(l)}</div><div class="pic" aria-hidden="true">${w.e}</div>
  <div class="word"><span class="first">${word[0]}</span>${word.slice(1)}</div></div>
@@ -207,7 +207,7 @@ function discover(){const w=G.pages[G.i],l=w.l,word=fmt(w.w),text=`${l} wie ${w.
 function task(){const p=P(),t=G.tasks[G.i];G.wrong=0;const n=Math.min(p.choices,4),known=learned(L);
  let opts,prompt,say;
  if(G.type==="anlaut"){let others=shuffle(known.filter(l=>l!==t.l));if(others.length<n-1)others=others.concat(shuffle(LETTERS.filter(l=>l!==t.l&&!others.includes(l))));
-  opts=shuffle([t.l,...others.slice(0,n-1)]).map(l=>({v:l,html:fmtL(l).split(" ")[0],say:l}));
+  opts=shuffle([t.l,...others.slice(0,n-1)]).map(l=>({v:l,html:fmtL(l).split(" ")[0],say:sayL(l,p.laut)}));
   prompt=`<div class="pic" aria-hidden="true">${t.e}</div><p class="ask">Womit fängt das Wort an?</p>`;say=`${t.w}. Womit fängt das Wort an?`}
  else{let others=shuffle(WORDS.filter(x=>x.l!==t.l&&known.includes(x.l)));if(others.length<n-1)others=others.concat(shuffle(WORDS.filter(x=>x.l!==t.l&&!others.includes(x))));
   opts=shuffle([t,...others.slice(0,n-1)]).map(x=>({v:x.w,html:x.e,say:x.w,pict:1}));
@@ -223,7 +223,7 @@ function task(){const p=P(),t=G.tasks[G.i];G.wrong=0;const n=Math.min(p.choices,
   if(b.dataset.v===correct){Input.pause(true);b.classList.add("right");if(!G.wrong)G.ok++;
    app.querySelectorAll(".choice").forEach(x=>x.disabled=true);
    const msg=PRAISE[Math.random()*PRAISE.length|0];fb.className="feedback ok";fb.textContent=msg+" "+(G.type==="anlaut"?`${t.w} beginnt mit ${t.l}.`:fmt(t.w));
-   await Speech.say(G.type==="anlaut"?`${msg} ${t.w} beginnt mit ${t.l}.`:`${msg} ${t.w}.`);
+   await Speech.say(G.type==="anlaut"?`${msg} ${t.w} beginnt mit ${sayL(t.l,p.laut)}.`:`${msg} ${t.w}.`);
    await new Promise(r=>setTimeout(r,500));if(G!==myG)return;G.i++;G.i<G.tasks.length?task():finish()}
   else{G.wrong++;b.classList.add("wrong");b.disabled=true;fb.className="feedback no";
    fb.textContent="Noch nicht. Versuch es nochmal.";Input.pause(true);
@@ -618,7 +618,7 @@ function renderAdult(){const p=S.profiles.find(x=>x.id===editId);
  <fieldset><legend>Aufgaben</legend>
  ${sel("choices","Antworten zur Auswahl",p.choices,[[2,"2"],[3,"3"],[4,"4"]])}
  ${sel("caps","Schrift",p.caps,[[true,"GROSSBUCHSTABEN"],[false,"Groß- und Kleinbuchstaben"]])}
- ${chk("autoRead","„Wort und Bild“: Wort vorlesen",p.autoRead)}
+ ${chk("laut","Buchstaben als Laut sprechen („mmm“ statt „em“)",p.laut)}${chk("autoRead","„Wort und Bild“: Wort vorlesen",p.autoRead)}
  ${chk("sequential","Lektionen nacheinander freischalten",p.sequential)}</fieldset>
  <fieldset><legend>Darstellung & Ton</legend>
  ${sel("size","Größe",p.size,[["normal","normal"],["gross","groß"],["sehrgross","sehr groß"]])}

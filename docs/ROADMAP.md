@@ -18,8 +18,10 @@ im Web und als App im App Store und bei Google Play.
 - Alle benötigten Texte aufnehmen (die App kennt ihre Liste selbst: `voiceInventory()`,
   rund 400 Einträge: Sätze, Zahlen 0–100, Buchstaben, Silben, Wörter).
 - Ganze Sätze aufnehmen statt Satzbausteine aneinanderzureihen – klingt natürlicher.
-- Buchstaben als **Laut** sprechen („mmm“) statt mit dem Buchstabennamen („em“) –
-  wichtig für das Lesenlernen nach Anlaut-Methode.
+- ✅ Buchstaben als **Laut** sprechen („mmm“) statt mit dem Buchstabennamen („em“) –
+  wichtig für das Lesenlernen nach Anlaut-Methode. Schalter im Erwachsenenbereich.
+  Laut-Tabelle in `src/content.js` (`LAUT`); nach den ersten Aufnahmen anhören und nachschärfen,
+  besonders die kurzen Laute B, D, G, K, P, T.
 
 ## Phase 3 – Gestaltung und Bedienung (UI/UX)
 - Einheitliches Erscheinungsbild, eigene Figur/Maskottchen statt Emojis

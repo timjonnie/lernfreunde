@@ -26,7 +26,7 @@ const args = process.argv.slice(2);
 const DRY = args.includes("--dry-run");
 const LIMIT = args.includes("--limit") ? Number(args[args.indexOf("--limit") + 1]) : Infinity;
 /* Reihenfolge: was die Kinder am häufigsten hören, zuerst */
-const ORDER = ["saetze", "buchstaben", "woerter", "silben", "zahlen"];
+const ORDER = ["saetze", "laute", "buchstaben", "woerter", "silben", "zahlen"];
 
 export const slug = s => s.toLowerCase().replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss")
   .normalize("NFKD").replace(/[^\x00-\x7f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "x";
@@ -49,6 +49,8 @@ async function remainingCredits() {
   const r = await fetch("https://api.elevenlabs.io/v1/user/subscription", { headers: { "xi-api-key": API_KEY } });
   if (!r.ok) return null; // Schlüssel ohne Leserecht auf das Abo – dann einfach loslegen
   const s = await r.json();
+  if (s.next_character_count_reset_unix)
+    console.log(`Nächste Aufladung des Guthabens: ${new Date(s.next_character_count_reset_unix * 1000).toLocaleDateString("de-DE")}`);
   return s.character_limit - s.character_count;
 }
 

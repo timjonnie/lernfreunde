@@ -64,3 +64,10 @@ export const PRAISE=["Ja, richtig!","Super!","Toll gemacht!","Genau!","Prima!"];
 export const ROUND=5;
 export const COLORS=[["Rot","#E53935"],["Orange","#FB8C00"],["Gelb","#FDD835"],["Grün","#43A047"],["Hellblau","#4FC3F7"],["Blau","#1E63C8"],["Lila","#8E44AD"],["Rosa","#F48FB1"],["Braun","#8D5A3B"],["Weiß","#FFFFFF"]];
 export const TOOL_NAME={schere:"Schere",stift:"Stifte",kleber:"Kleber",bogen:"Bastelbogen",haken:"Fertig"};
+/* Buchstaben als Laut sprechen (Anlaut-Methode): „mmm wie Maus“ statt „em wie Maus“.
+   Schreibweise so gewählt, dass Sprachausgaben den Laut statt des Buchstabennamens sprechen.
+   Klingt ein Laut falsch: hier anpassen, den Clip in public/assets/voice löschen, „Stimmen erzeugen“ neu starten. */
+export const LAUT={A:"aaa",E:"eee",I:"iii",O:"ooo",U:"uuu",M:"mmmm",N:"nnnn",L:"llll",R:"rrrr",S:"ssss",F:"ffff",W:"wwww",H:"hhh",Z:"tsss",
+ B:"bö",D:"dö",G:"gö",K:"kö",P:"pö",T:"tö"};
+/* Was gesprochen wird, wenn ein Buchstabe vorkommt – je nach Einstellung Laut oder Buchstabenname */
+export const sayL=(l,laut=true)=>laut&&LAUT[l]?LAUT[l]:l;
