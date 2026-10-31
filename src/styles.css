@@ -293,3 +293,19 @@ img.crop{display:block;max-width:100%;max-height:100%;object-fit:contain;backgro
 @media (prefers-reduced-motion:no-preference){body:not([data-calm="1"]) .result .dino.cheer{animation:hop .9s ease-out 1}}
 @keyframes hop{0%,100%{transform:translateY(0)}30%{transform:translateY(-18px) rotate(-4deg)}60%{transform:translateY(0) rotate(2deg)}}
 @media (max-width:620px){.greet{align-items:center}.bubble{margin-bottom:0}.bubble::before{bottom:auto;top:40%}}
+
+/* ---------- Sticker-Album ---------- */
+.albumbtn{display:flex;align-items:center;gap:8px;font-weight:700;padding:.3em .9em}
+.albumbtn img{width:calc(40px*var(--scale));height:calc(40px*var(--scale))}
+.newsticker{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:1.15em}
+.newsticker img{width:clamp(110px,20vw,170px);filter:drop-shadow(0 4px 6px rgb(27 42 74/.25))}
+.newsticker.small img{width:clamp(80px,12vw,110px)}
+@media (prefers-reduced-motion:no-preference){body:not([data-calm="1"]) .newsticker img{animation:stick .8s cubic-bezier(.2,1.6,.4,1) both}}
+@keyframes stick{from{transform:scale(.2) rotate(-25deg);opacity:0}to{transform:scale(1) rotate(-4deg);opacity:1}}
+.album{flex:1;min-height:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(130px,40%),1fr));grid-auto-rows:max-content;align-content:start;gap:14px;overflow:auto;padding:4px 4px 24px}
+.stk{margin:0;display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--surface);border:3px dashed var(--line);border-radius:18px;padding:10px}
+.stk img{width:100%;max-width:120px;height:auto;aspect-ratio:1}
+.stk:not(.have) img{filter:brightness(0);opacity:.12}
+.stk.have{border-style:solid}
+.stk figcaption{font-family:var(--font-learn);font-weight:700}
+.stk:not(.have) figcaption{color:var(--muted)}

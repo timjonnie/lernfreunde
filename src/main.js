@@ -20,7 +20,7 @@ const learnedSylls=L=>{const i=LESSONS.indexOf(L);return [...new Set(LESSONS.sli
 
 /* ---------- Speicher ---------- */
 const clone=x=>JSON.parse(JSON.stringify(x));
-const DEF={subject:"lesen",name:"",face:"🦊",mode:"touch",scanMs:2000,dwellMs:1500,scanSpeak:true,choices:3,caps:true,laut:true,size:"normal",hc:false,calm:false,tts:true,rate:0.9,autoRead:true,sequential:false,prog:{},log:[],paint:{},gallery:[],craft:{}};
+const DEF={subject:"lesen",name:"",face:"🦊",mode:"touch",scanMs:2000,dwellMs:1500,scanSpeak:true,choices:3,caps:true,laut:true,size:"normal",hc:false,calm:false,tts:true,rate:0.9,autoRead:true,sequential:false,prog:{},log:[],paint:{},gallery:[],craft:{},stickers:[],rewarded:{}};
 const FACES=["🦊","🐻","🐼","🐸","🦉","🐢","🐙","🦄"];
 let S={profiles:[],cur:null};
 function load(){try{const r=localStorage.getItem("lernfreunde.v1");if(r)S=JSON.parse(r)}catch(e){}
@@ -32,7 +32,9 @@ function load(){try{const r=localStorage.getItem("lernfreunde.v1");if(r)S=JSON.p
    log:[{g:"anlaut",l:"l1",ok:5,n:5,ts:ago(4)},{g:"wortbild",l:"l1",ok:4,n:5,ts:ago(4)},{g:"anlaut",l:"l2",ok:4,n:5,ts:ago(2)},{g:"wortbild",l:"l2",ok:3,n:5,ts:ago(1)}]},
   {...clone(DEF),id:"p2",name:"Tim",face:"🐢",example:true,mode:"scan1",choices:2,size:"gross",calm:true,sequential:true,
    prog:{l1:{entdecken:1,anlaut:3}},log:[{g:"anlaut",l:"l1",ok:3,n:5,ts:ago(1)}]});S.seed2=true;save()}
- S.profiles.forEach(p=>{for(const k in DEF)if(p[k]===undefined)p[k]=clone(DEF[k])})}
+ S.profiles.forEach(p=>{for(const k in DEF)if(p[k]===undefined)p[k]=clone(DEF[k])})
+ /* bestehende Profile: für schon geschaffte Lektionen nachträglich Sticker vergeben */
+ S.profiles.forEach(p=>{if(p.stickerInit)return;p.stickerInit=true;LESSONS.forEach(x=>{if(doneCount(p,x)===3)giveSticker(p,"l:"+x.id,lessonPrefer(x))})});save()}
 function save(){try{localStorage.setItem("lernfreunde.v1",JSON.stringify(S))}catch(e){}}
 const P=()=>S.profiles.find(p=>p.id===S.cur);
 
@@ -169,12 +171,12 @@ function menu(){G=null;const p=P();L=null;if(p.subject==="malen")return malMenu(
     <span class="lbody"><span class="ll">${lglyph(x)}</span><b>${x.t}</b>${cur?'<span class="chip">Hier geht es weiter</span>':""}</span>
     <span class="lstars" aria-label="${d} von 3 Sternen">${[0,1,2].map(k=>starSvg(k<d)).join("")}</span>`,
    `data-i="${i}" ${o?"":"disabled"}`)}).join("")}</div></section>`};
- view(`<div class="bar">${T("","Zurück zur Startseite","⌂ Start",'id="home"')}<div class="grow"><h1 class="hi">${p.face} Hallo ${esc(p.name)}!</h1></div></div>
+ view(`<div class="bar">${T("","Zurück zur Startseite","⌂ Start",'id="home"')}<div class="grow"><h1 class="hi">${p.face} Hallo ${esc(p.name)}!</h1></div>${albumBtn(p)}</div>
  ${subjBar(p)}
  <div class="chapters">${CHAPTERS.map(chapter).join("")}</div>`,true);
  Speech.say(`Hallo! Welche Lektion möchtest du machen?`);Input.refresh();
  bindSubj(p);
- bind("home",home);app.querySelectorAll("[data-i]").forEach(b=>b.onclick=()=>{L=LESSONS[+b.dataset.i];lesson()})}
+ bind("home",home);bind("album",()=>album(menu));app.querySelectorAll("[data-i]").forEach(b=>b.onclick=()=>{L=LESSONS[+b.dataset.i];lesson()})}
 
 function lesson(){G=null;const p=P(),g=lp(p,L),ci=chOf(L);
  const st=k=>k===L.games[0]?(g[k]?"✓ geschafft":"Noch nicht gemacht"):(g[k]!=null?`✓ Bestes Ergebnis: ${g[k]} von ${ROUND}`:"Noch nicht gemacht");
@@ -247,10 +249,29 @@ function finish(){const p=P(),pr=(p.prog[L.id]=p.prog[L.id]||{});pr[G.type]=Math
  result(G.ok,G.tasks.length,G.ok>=G.tasks.length-1?"Super gemacht!":"Gut geübt!")}
 function result(ok,n,title){const p=P(),i=LESSONS.indexOf(L),complete=doneCount(p,L)===3,rew=complete&&L.ls?L.ls.map(l=>MOTIFS.find(m=>m.l===l)).find(Boolean):null,next=LESSONS.slice(i+1).find(x=>subj(x)===subj(L));
  if(complete)title=`Lektion ${lno(L)} geschafft!`;
+ const got=complete?giveSticker(p,"l:"+L.id,lessonPrefer(L)):null;
  const st=Math.max(1,Math.round(ok/n*5));const star=(on,k)=>`<svg viewBox="0 0 24 24" aria-hidden="true" style="animation-delay:${k*.12}s"><path class="${on?"on":"off"}" d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg>`;
- view(`<div class="result">${dino("cheer")}<h2>${title}</h2><div class="stars" role="img" aria-label="${st} von 5 Sternen">${[0,1,2,3,4].map(k=>star(k<st,k)).join("")}</div>
- <div class="rowbtns">${complete&&next?T("primary","Nächste Lektion","Nächste Lektion ▶",'id="nextL"'):""}${T(complete&&next?"":"primary","Nochmal spielen","↻ Nochmal",'id="again2"')}${T("","Zur Lektion","Zur Lektion",'id="menu"')}${rew?T("",`${rew.w} ausmalen`,`🎨 ${rew.w} ausmalen`,'id="paintR"'):""}</div></div>`,true);
- Speech.say(title);Input.refresh();const type=G.type;bind("paintR",()=>paintOpen(rew,lesson));bind("again2",()=>start(type));bind("menu",lesson);bind("nextL",()=>{L=next;lesson()})}
+ view(`<div class="result">${got?newSticker(got):dino("cheer")}<h2>${title}</h2><div class="stars" role="img" aria-label="${st} von 5 Sternen">${[0,1,2,3,4].map(k=>star(k<st,k)).join("")}</div>
+ <div class="rowbtns">${complete&&next?T("primary","Nächste Lektion","Nächste Lektion ▶",'id="nextL"'):""}${T(complete&&next?"":"primary","Nochmal spielen","↻ Nochmal",'id="again2"')}${T("","Zur Lektion","Zur Lektion",'id="menu"')}${rew?T("",`${rew.w} ausmalen`,`🎨 ${rew.w} ausmalen`,'id="paintR"'):""}${got?T("","Sticker-Album","Sticker-Album",'id="album"'):""}</div></div>`,true);
+ Speech.say(got?`${title} Du bekommst einen Sticker: ${got.w}.`:title);Input.refresh();bind("album",()=>album(lesson));const type=G.type;bind("paintR",()=>paintOpen(rew,lesson));bind("again2",()=>start(type));bind("menu",lesson);bind("nextL",()=>{L=next;lesson()})}
+
+/* ---------- Sticker-Album: Sticker aus den Malbüchern für geschaffte Lektionen, Bilder und Bastelarbeiten ---------- */
+const stickerUrl=id=>`assets/stickers/${id}.png`;
+const lessonPrefer=x=>x.ls?MOTIFS.filter(m=>x.ls.includes(m.l)).map(m=>m.id):[];
+/* vergibt höchstens einen Sticker pro Anlass (key); bevorzugt passende Motive, sonst das nächste fehlende */
+function giveSticker(p,key,prefer){p.stickers=p.stickers||[];p.rewarded=p.rewarded||{};if(p.rewarded[key])return null;
+ const free=MOTIFS.map(m=>m.id).filter(id=>!p.stickers.includes(id));p.rewarded[key]=1;
+ if(!free.length){save();return null}
+ const id=(prefer||[]).find(x=>free.includes(x))||free[0];p.stickers.push(id);save();return MOTIFS.find(m=>m.id===id)}
+const newSticker=(m,small)=>`<div class="newsticker${small?" small":""}"><img src="${stickerUrl(m.id)}" alt=""><span>Neuer Sticker: <b>${esc(m.w)}</b></span></div>`;
+const albumBtn=p=>T("albumbtn","Sticker-Album",`<img src="${stickerUrl((p.stickers||[]).slice(-1)[0]||"s_dino")}" alt=""> <span>${(p.stickers||[]).length} / ${MOTIFS.length}</span>`,'id="album"');
+function album(back){const p=P(),have=new Set(p.stickers||[]);
+ view(`<div class="bar">${T("","Zurück","◀ Zurück",'id="back"')}<div class="grow"><h1 class="hi">Mein Sticker-Album</h1></div></div>
+ <p class="note">${have.size} von ${MOTIFS.length} Stickern gesammelt. Für jede geschaffte Lektion, jedes fertige Bild und jede Bastelarbeit gibt es einen neuen.</p>
+ <div class="album">${MOTIFS.map(m=>have.has(m.id)
+  ?`<figure class="stk have"><img src="${stickerUrl(m.id)}" alt="${esc(m.w)}"><figcaption>${esc(m.w)}</figcaption></figure>`
+  :`<figure class="stk"><img src="${stickerUrl(m.id)}" alt="" aria-hidden="true"><figcaption aria-label="noch nicht gesammelt">?</figcaption></figure>`).join("")}</div>`,true);
+ Speech.say(`Dein Sticker-Album. Du hast ${have.size} Sticker.`);Input.refresh();bind("back",back)}
 
 /* ---------- Silben-Spiele ---------- */
 const fmtSyl=s=>P().caps?s.toUpperCase():s.split(" ").map(t=>t[0].toUpperCase()+t.slice(1).toLowerCase()).join(" ");
@@ -471,7 +492,7 @@ let PM=null;
 function subjBar(p){return `<div class="subjects" role="group" aria-label="Fach">${SUBJECTS.map(([k,l])=>T("subj"+(p.subject===k?" on":""),l.replace(/^\S+ /,""),l,`data-s="${k}" aria-pressed="${p.subject===k}"`)).join("")}</div>`}
 function bindSubj(p){app.querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{p.subject=b.dataset.s;save();menu()})}
 function malMenu(){const p=P();PM=null;const scan=Input.mode().startsWith("scan");
- view(`<div class="bar">${T("","Zurück zur Startseite","⌂ Start",'id="home"')}<div class="grow"><h1 class="hi">${p.face} Hallo ${esc(p.name)}!</h1></div></div>
+ view(`<div class="bar">${T("","Zurück zur Startseite","⌂ Start",'id="home"')}<div class="grow"><h1 class="hi">${p.face} Hallo ${esc(p.name)}!</h1></div>${albumBtn(p)}</div>
  ${subjBar(p)}
  <div class="chapters malen">${BOOKS.list.filter(bk=>bk.app).map(bk=>{const ms=MOTIFS.filter(m=>m.books.includes(bk.id));if(!ms.length)return "";
   return `<section class="chapter c5" aria-label="${bk.app}"><header class="chhead"><div class="badge">Aus dem Malbuch „${bk.t}“</div><h2>${bk.app}</h2><p>Farbe wählen und auf eine Fläche tippen</p></header>
@@ -481,7 +502,7 @@ function malMenu(){const p=P();PM=null;const scan=Input.mode().startsWith("scan"
  <header class="chhead"><h2>Meine Bilder</h2><p>${p.gallery.length?`${p.gallery.length} ${p.gallery.length===1?"Bild":"Bilder"}`:"Hier erscheinen deine fertigen Bilder."}</p></header>
  <div class="gallery">${p.gallery.map((g,i)=>T("gpic",`Mein Bild ${i+1}`,`<img src="${g.img}" alt="">`,`data-g="${i}"`)).join("")}</div>
  <p class="note books">📚 ${BOOKS.hint}</p></section></div>`,true);
- Speech.say("Was möchtest du malen?");Input.refresh();bindSubj(p);bind("home",home);bind("free",freePaint);
+ Speech.say("Was möchtest du malen?");Input.refresh();bindSubj(p);bind("home",home);bind("album",()=>album(menu));bind("free",freePaint);
  app.querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>paintOpen(MOTIFS.find(m=>m.id===b.dataset.m),malMenu));
  app.querySelectorAll("[data-g]").forEach(b=>b.onclick=()=>showPic(+b.dataset.g))}
 async function paintOpen(m,ret){const p=P();const prep=await prepMotif(m);const sv=p.paint&&p.paint[m.id];
@@ -521,10 +542,11 @@ function snapshot(){const cv=document.getElementById("pc"),t=document.createElem
 function addGallery(img,m){const p=P();p.gallery=[{img,m,ts:Date.now()},...(p.gallery||[])].slice(0,12);save()}
 function paintDone(){const img=snapshot();if(!PM.free&&!PM.cols.some(Boolean)){Speech.say("Male zuerst etwas an.");return}
  addGallery(img,PM.free?"frei":PM.m.id);const m=PM.m,free=PM.free,ret=PM.ret;
- view(`<div class="result"><h2>Toll gemalt!</h2><img class="donepic" src="${img}" alt="Dein fertiges Bild">
+ const got=giveSticker(P(),free?"frei:"+new Date().toDateString():"p:"+m.id,free?[]:[m.id]);
+ view(`<div class="result"><h2>Toll gemalt!</h2>${got?newSticker(got,true):""}<img class="donepic" src="${img}" alt="Dein fertiges Bild">
  <div class="rowbtns">${T("primary","Weiter malen","🎨 Weiter malen",'id="more"')}${T("","Drucken","🖨️ Drucken",'id="print"')}${T("","Zur Bildauswahl","Zur Bildauswahl",'id="menu"')}</div>
  <p class="note books">📚 ${BOOKS.hint}</p></div>`,true);
- Speech.say("Toll gemalt!");Input.refresh();
+ Speech.say(got?`Toll gemalt! Du bekommst einen Sticker: ${got.w}.`:"Toll gemalt!");Input.refresh();
  bind("more",()=>free?freePaint():paintOpen(m,ret));bind("print",()=>printImg(img,free?"Mein Bild":m.w));bind("menu",malMenu)}
 function showPic(i){const p=P(),g=p.gallery[i];if(!g)return malMenu();
  view(`<div class="result"><img class="donepic" src="${g.img}" alt="Mein Bild"><div class="rowbtns">${T("","Zurück","◀ Zurück",'id="menu"')}${T("","Drucken","🖨️ Drucken",'id="print"')}</div></div>`,true);
@@ -572,7 +594,7 @@ async function hydrateCrops(){for(const el of app.querySelectorAll("img.crop:not
  el.src=_cr[key]}}
 const craftBook=()=>BOOKS.list.find(b=>b.id===(CR.book||"einfach"));
 function bastelMenu(){const p=P();p.craft=p.craft||{};const bk=craftBook();
- view(`<div class="bar">${T("","Zurück zur Startseite","⌂ Start",'id="home"')}<div class="grow"><h1 class="hi">${p.face} Hallo ${esc(p.name)}!</h1></div></div>
+ view(`<div class="bar">${T("","Zurück zur Startseite","⌂ Start",'id="home"')}<div class="grow"><h1 class="hi">${p.face} Hallo ${esc(p.name)}!</h1></div>${albumBtn(p)}</div>
  ${subjBar(p)}
  <div class="chapters malen"><section class="chapter c6" aria-label="Basteln"><header class="chhead"><div class="badge">Aus dem Buch „${bk.t}“</div><h2>Basteln</h2><p>Schritt für Schritt: malen, schneiden, kleben</p></header>
  <div class="motifs">${CR.list.map(c=>{const st=p.craft[c.id];return T("motif",c.t,`<span class="mthumb">${cropImg(c.thumb)}</span><b>${c.t}</b><span class="stufe">${"●".repeat(c.lvl)}${"○".repeat(2-c.lvl)} Stufe ${c.lvl}</span>${st&&st.done?'<span class="chip okc">✓ geschafft</span>':st&&st.i?`<span class="chip">Schritt ${st.i+1} von ${c.steps.length}</span>`:""}`,`data-k="${c.id}"`)}).join("")}</div></section>
@@ -580,7 +602,7 @@ function bastelMenu(){const p=P();p.craft=p.craft||{};const bk=craftBook();
  <ul class="need">${["stift","schere","kleber","haken"].map(t=>`<li><span class="tool">${TOOL_SVG[t]}</span>${{stift:"Male das Bild an.",schere:"Schneide auf der Linie aus.",kleber:"Klebe das Teil auf.",haken:"Ich bin fertig."}[t]}</li>`).join("")}</ul>
  <p class="note">Für Erwachsene: Den Bastelbogen vorher ausdrucken, nur einseitig. Für Kinder eine Schere mit runder Spitze nehmen.</p>
  <p class="note books">📚 ${BOOKS.hint}</p></section></div>`,true);
- hydrateCrops();Speech.say("Was möchtest du basteln?");Input.refresh();bindSubj(p);bind("home",home);
+ hydrateCrops();Speech.say("Was möchtest du basteln?");Input.refresh();bindSubj(p);bind("home",home);bind("album",()=>album(menu));
  app.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>craftIntro(CR.list.find(c=>c.id===b.dataset.k)))}
 function craftIntro(c){const st=P().craft[c.id]||{};const need=c.need.map(t=>t==="bogen"&&c.pages.length>1?`${c.pages.length} Bastelbögen`:TOOL_NAME[t]);
  view(`<div class="bar">${T("","Zurück zum Basteln","◀ Basteln",'id="back"')}<div class="grow"><h1 class="hi">${c.t}</h1></div></div>
@@ -600,12 +622,12 @@ function craftStep(c,i){const s=c.steps[i],p=P();p.craft[c.id]={...(p.craft[c.id
  bind("back",bastelMenu);bind("again",()=>{Speech.say(say);Input.refresh()});bind("hear",()=>{Speech.say(say);Input.refresh()});
  bind("prev",()=>craftStep(c,Math.max(0,i-1)));bind("next",()=>last?craftDone(c):craftStep(c,i+1));
  bind("paint",()=>paintOpen(MOTIFS.find(m=>m.id===s.paint),()=>craftStep(c,i)))}
-function craftDone(c){const p=P();p.craft[c.id]={i:0,done:true};save();
- view(`<div class="result"><h2>Du hast es geschafft!</h2><div class="stars" role="img" aria-label="3 Sterne">${[0,1,2].map(k=>starSvg(true,k)).join("")}</div>
+function craftDone(c){const p=P();p.craft[c.id]={i:0,done:true};save();const got=giveSticker(p,"c:"+c.id,[]);
+ view(`<div class="result">${got?newSticker(got,true):""}<h2>Du hast es geschafft!</h2><div class="stars" role="img" aria-label="3 Sterne">${[0,1,2].map(k=>starSvg(true,k)).join("")}</div>
  <div class="cdone">${cropImg(c.steps[c.steps.length-1].img)}</div>
  <div class="rowbtns">${T("primary","Noch etwas basteln","✂️ Noch etwas basteln",'id="menu"')}${T("","Nochmal von vorn","↻ Nochmal",'id="again2"')}</div>
  <p class="note books">📚 ${BOOKS.hint}</p></div>`,true);
- hydrateCrops();Speech.say("Du hast es geschafft! Toll gemacht.");Input.refresh();bind("menu",bastelMenu);bind("again2",()=>craftStep(c,0))}
+ hydrateCrops();Speech.say(got?`Du hast es geschafft! Du bekommst einen Sticker: ${got.w}.`:"Du hast es geschafft! Toll gemacht.");Input.refresh();bind("menu",bastelMenu);bind("again2",()=>craftStep(c,0))}
 function printPages(srcs){let pr=document.getElementById("print-area");if(!pr){pr=document.createElement("div");pr.id="print-area";document.body.appendChild(pr)}
  pr.innerHTML=srcs.map(s=>`<div class="ppage"><img src="${s}" alt=""></div>`).join("");
  const ims=[...pr.querySelectorAll("img")];Promise.all(ims.map(im=>im.complete?1:new Promise(r=>{im.onload=im.onerror=r}))).then(()=>{try{window.print()}catch(e){}})}

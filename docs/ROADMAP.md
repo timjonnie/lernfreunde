@@ -27,7 +27,7 @@ im Web und als App im App Store und bei Google Play.
 - ✅ Tim-Kipper-CI: App-Icon, Favicon, Farben (Nachtblau, Buntstift-Orange), Schrift Lexend
 - ✅ Maskottchen: der Dino aus „Mal mit mir!“ in CI-Farben – Startseite, Ergebnis-Bildschirm, als Ausmalbild
 - ✅ Neue Startseite: Wortmarke, Dino mit Sprechblase, Kinder-Karten mit Sternen und „Weiter bei …“
-- Klarere Belohnungen und Fortschritt für Kinder
+- ✅ Sticker-Album: 31 Sticker aus den Malbüchern für geschaffte Lektionen, fertige Bilder und Bastelarbeiten
 - Übersichtlicher Erwachsenenbereich mit Lernstand-Auswertung
 - Offline nutzbar (installierbare Web-App)
 
