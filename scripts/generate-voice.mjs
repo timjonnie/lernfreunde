@@ -49,6 +49,8 @@ async function remainingCredits() {
   const r = await fetch("https://api.elevenlabs.io/v1/user/subscription", { headers: { "xi-api-key": API_KEY } });
   if (!r.ok) return null; // Schlüssel ohne Leserecht auf das Abo – dann einfach loslegen
   const s = await r.json();
+  if (s.next_character_count_reset_unix)
+    console.log(`Nächste Aufladung des Guthabens: ${new Date(s.next_character_count_reset_unix * 1000).toLocaleDateString("de-DE")}`);
   return s.character_limit - s.character_count;
 }
 
