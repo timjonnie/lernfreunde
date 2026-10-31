@@ -161,7 +161,7 @@ export const MOTIFS = [
   "books": [
    "spass"
   ],
-  "n": 18,
+  "n": 16,
   "lvl": 2,
   "src": "assets/motifs/s_dino.png"
  },
