@@ -59,7 +59,7 @@ h1,h2{text-wrap:balance;margin:0}
 /* home */
 .hello{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
 .hello h1{font-family:var(--font-learn);font-size:calc(2.1rem*var(--scale))}
-.kids{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(220px,100%),1fr));gap:16px}
+.kids{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(270px,100%),1fr));gap:16px}
 .kid{display:flex;flex-direction:column;align-items:center;gap:6px;padding:1.2em}
 .kid .face{font-size:calc(3.2rem*var(--scale));line-height:1}
 .kid .name{font-family:var(--font-learn);font-size:1.5em;font-weight:700}
@@ -274,3 +274,22 @@ img.crop{display:block;max-width:100%;max-height:100%;object-fit:contain;backgro
  #print-area img{width:16cm;height:16cm;object-fit:contain}
  #print-area p{font-size:11pt;margin-top:14pt}}
 
+
+/* ---------- Startseite mit Maskottchen (CI: Wortmarke leicht/kräftig, oranger Punkt) ---------- */
+.brandbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.wordmark{font-family:var(--font-ui);font-size:calc(1.9rem*var(--scale));letter-spacing:-.02em;line-height:1;color:var(--fg)}
+.wordmark .wl{font-weight:300}.wordmark .wb{font-weight:700}.wordmark .wd{font-weight:700;color:var(--dot)}
+.greet{display:flex;align-items:flex-end;gap:clamp(8px,3vw,28px);padding:4px 0}
+.dino{display:block;width:clamp(110px,22vw,190px);height:auto;flex-shrink:0}
+.bubble{position:relative;background:var(--surface);border:3px solid var(--line);border-radius:24px;padding:.8em 1.2em;margin-bottom:clamp(30px,6vw,70px)}
+.bubble::before{content:"";position:absolute;left:-14px;bottom:22px;width:22px;height:22px;background:var(--surface);border-left:3px solid var(--line);border-bottom:3px solid var(--line);transform:rotate(45deg)}
+.bubble h1{font-family:var(--font-learn);font-size:calc(1.9rem*var(--scale));line-height:1.15}
+.bubble p{margin:.3em 0 0;color:var(--muted)}
+.kid{gap:8px;padding:1.1em 1em 1.2em;border-width:3px}
+.kid .kidmeta{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.88em;color:var(--muted);text-align:center}
+.kstars{display:inline-flex;align-items:center;gap:4px;color:var(--fg)}
+.kstars svg{width:calc(22px*var(--scale));height:calc(22px*var(--scale))}.kstars .on{fill:var(--star)}
+.result .dino.cheer{width:clamp(90px,16vw,150px)}
+@media (prefers-reduced-motion:no-preference){body:not([data-calm="1"]) .result .dino.cheer{animation:hop .9s ease-out 1}}
+@keyframes hop{0%,100%{transform:translateY(0)}30%{transform:translateY(-18px) rotate(-4deg)}60%{transform:translateY(0) rotate(2deg)}}
+@media (max-width:620px){.greet{align-items:center}.bubble{margin-bottom:0}.bubble::before{bottom:auto;top:40%}}

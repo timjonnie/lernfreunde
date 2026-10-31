@@ -155,6 +155,17 @@ export const MOTIFS = [
   "src": "assets/motifs/s_apfelbaum.png"
  },
  {
+  "id": "s_dino",
+  "w": "Dino",
+  "l": "",
+  "books": [
+   "spass"
+  ],
+  "n": 18,
+  "lvl": 2,
+  "src": "assets/motifs/s_dino.png"
+ },
+ {
   "id": "l_apfel",
   "w": "Apfel",
   "l": "A",

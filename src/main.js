@@ -118,11 +118,20 @@ function view(html,child){app.innerHTML=html;if(child)app.dataset.child="1";else
 const bind=(id,fn)=>{const el=document.getElementById(id);if(el)el.onclick=fn};
 
 /* ---------- Startseite ---------- */
+/* Maskottchen: der Dino aus „Mal mit mir!“ in CI-Farben */
+const DINO="assets/mascot/dino.png";
+const dino=(cls="")=>`<img class="dino ${cls}" src="${DINO}" alt="" aria-hidden="true">`;
+const starsOf=p=>LESSONS.reduce((n,x)=>n+doneCount(p,x),0);
+function kidCard(p){const nx=nextLesson(p),st=starsOf(p);
+ const where=nx?`Weiter: ${CHAPTERS[chOf(nx)].t} · Lektion ${lno(nx)}`:p.subject==="malen"?"Malen":p.subject==="basteln"?"Basteln":"Alles geschafft!";
+ return `<button class="tgt kid" data-id="${p.id}" data-say="${esc(p.name)}"><span class="face" aria-hidden="true">${p.face}</span><span class="name">${esc(p.name)}</span>
+  <span class="kidmeta"><span class="kstars" aria-label="${st} Sterne">${starSvg(true)}<b>${st}</b></span><span>${esc(where)}</span></span>${p.example?'<span class="badge">Beispielprofil</span>':""}</button>`}
 function home(){S.cur=null;window.speechSynthesis?.cancel();
- view(`<div class="hello"><div><div class="badge">Lernfreunde · Lesen, Rechnen, Malen, Basteln</div><h1>Wer lernt heute?</h1></div>
- <button class="gate" id="gate" aria-label="Für Erwachsene: 2 Sekunden gedrückt halten"><i></i><span style="position:relative">Für Erwachsene · gedrückt halten</span></button></div>
- <div class="kids">${S.profiles.map(p=>`<button class="tgt kid" data-id="${p.id}"><span class="face" aria-hidden="true">${p.face}</span><span class="name">${esc(p.name)}</span>${p.example?'<span class="badge">Beispielprofil</span>':""}</button>`).join("")}</div>
- <p class="note">Alle Daten bleiben nur auf diesem Gerät.</p>`);
+ view(`<header class="brandbar"><div class="wordmark" aria-label="Lernfreunde"><span class="wl">Lern</span><span class="wb">freunde</span><span class="wd">.</span></div>
+ <button class="gate" id="gate" aria-label="Für Erwachsene: 2 Sekunden gedrückt halten"><i></i><span style="position:relative">Für Erwachsene · gedrückt halten</span></button></header>
+ <section class="greet">${dino()}<div class="bubble"><h1>Hallo! Wer lernt heute mit mir?</h1><p>Tippe auf deinen Namen.</p></div></section>
+ <div class="kids">${S.profiles.map(kidCard).join("")}</div>
+ <p class="note">Lesen, Rechnen, Malen und Basteln · Alle Daten bleiben nur auf diesem Gerät.</p>`);
  app.querySelectorAll(".kid").forEach(b=>b.onclick=()=>{S.cur=b.dataset.id;save();menu()});
  const g=document.getElementById("gate");let t;
  const start=e=>{if(e.repeat)return;g.classList.add("holding");t=setTimeout(()=>{g.classList.remove("holding");adult()},2000)};
@@ -239,7 +248,7 @@ function finish(){const p=P(),pr=(p.prog[L.id]=p.prog[L.id]||{});pr[G.type]=Math
 function result(ok,n,title){const p=P(),i=LESSONS.indexOf(L),complete=doneCount(p,L)===3,rew=complete&&L.ls?L.ls.map(l=>MOTIFS.find(m=>m.l===l)).find(Boolean):null,next=LESSONS.slice(i+1).find(x=>subj(x)===subj(L));
  if(complete)title=`Lektion ${lno(L)} geschafft!`;
  const st=Math.max(1,Math.round(ok/n*5));const star=(on,k)=>`<svg viewBox="0 0 24 24" aria-hidden="true" style="animation-delay:${k*.12}s"><path class="${on?"on":"off"}" d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg>`;
- view(`<div class="result"><h2>${title}</h2><div class="stars" role="img" aria-label="${st} von 5 Sternen">${[0,1,2,3,4].map(k=>star(k<st,k)).join("")}</div>
+ view(`<div class="result">${dino("cheer")}<h2>${title}</h2><div class="stars" role="img" aria-label="${st} von 5 Sternen">${[0,1,2,3,4].map(k=>star(k<st,k)).join("")}</div>
  <div class="rowbtns">${complete&&next?T("primary","Nächste Lektion","Nächste Lektion ▶",'id="nextL"'):""}${T(complete&&next?"":"primary","Nochmal spielen","↻ Nochmal",'id="again2"')}${T("","Zur Lektion","Zur Lektion",'id="menu"')}${rew?T("",`${rew.w} ausmalen`,`🎨 ${rew.w} ausmalen`,'id="paintR"'):""}</div></div>`,true);
  Speech.say(title);Input.refresh();const type=G.type;bind("paintR",()=>paintOpen(rew,lesson));bind("again2",()=>start(type));bind("menu",lesson);bind("nextL",()=>{L=next;lesson()})}
 

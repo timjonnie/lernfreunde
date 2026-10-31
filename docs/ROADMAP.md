@@ -23,8 +23,10 @@ im Web und als App im App Store und bei Google Play.
   Laut-Tabelle in `src/content.js` (`LAUT`); nach den ersten Aufnahmen anhören und nachschärfen,
   besonders die kurzen Laute B, D, G, K, P, T.
 
-## Phase 3 – Gestaltung und Bedienung (UI/UX)
-- Einheitliches Erscheinungsbild, eigene Figur/Maskottchen statt Emojis
+## Phase 3 – Gestaltung und Bedienung (UI/UX) (läuft)
+- ✅ Tim-Kipper-CI: App-Icon, Favicon, Farben (Nachtblau, Buntstift-Orange), Schrift Lexend
+- ✅ Maskottchen: der Dino aus „Mal mit mir!“ in CI-Farben – Startseite, Ergebnis-Bildschirm, als Ausmalbild
+- ✅ Neue Startseite: Wortmarke, Dino mit Sprechblase, Kinder-Karten mit Sternen und „Weiter bei …“
 - Klarere Belohnungen und Fortschritt für Kinder
 - Übersichtlicher Erwachsenenbereich mit Lernstand-Auswertung
 - Offline nutzbar (installierbare Web-App)
