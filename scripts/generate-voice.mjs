@@ -62,7 +62,8 @@ async function speak(text) {
   if (!r.ok) {
     const body = await r.text();
     const err = new Error(`HTTP ${r.status}: ${body.slice(0, 300)}`);
-    err.stop = r.status === 401 || r.status === 402 || r.status === 403 || /quota|credits|limit|free_users|payment/i.test(body);
+    err.stop = [401, 402, 403].includes(r.status) ||
+      /authentication|invalid_api_key|api_key|quota|credits|limit|free_users|payment/i.test(body);
     throw err;
   }
   return Buffer.from(await r.arrayBuffer());
@@ -84,10 +85,10 @@ if (!API_KEY) {
   process.exit(1);
 }
 
-let budget = await remainingCredits();
+let budget = await remainingCredits().catch(() => null);
 if (budget != null) console.log(`Guthaben bei ElevenLabs: ${budget} Zeichen.`);
 mkdirSync(OUT_DIR, { recursive: true });
-let made = 0, stopReason = "";
+let made = 0, failed = 0, stopReason = "";
 for (const x of missing) {
   if (made >= LIMIT) { stopReason = `Limit von ${LIMIT} Clips erreicht`; break; }
   if (budget != null && x.t.length > budget) { stopReason = "Guthaben aufgebraucht"; break; }
@@ -97,10 +98,14 @@ for (const x of missing) {
     if (budget != null) budget -= x.t.length;
     console.log(`  ✓ ${x.t}`);
   } catch (e) {
+    failed++;
     console.error(`  ✗ ${x.t} – ${e.message}`);
     if (e.stop) { stopReason = "ElevenLabs hat abgelehnt (Guthaben, Tarif oder Schlüssel)"; break; }
+    if (e.name === "TypeError") { stopReason = "ElevenLabs nicht erreichbar (Netzwerk)"; break; }
   }
 }
 const total = writeManifest();
 console.log(`\n${made} neue Clips erzeugt. Insgesamt ${total} von ${items.length} aufgenommen.` +
   (stopReason ? ` Gestoppt: ${stopReason}. Beim nächsten Lauf geht es weiter.` : ""));
+/* Nichts geschafft, aber Fehler → Lauf als fehlgeschlagen melden, damit es auffällt */
+if (!made && failed) process.exit(1);
