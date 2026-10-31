@@ -343,3 +343,11 @@ ul.weak{margin:0;padding-left:1.2em;display:grid;gap:4px}
 .sent .gap{display:inline-block;min-width:3ch;border-bottom:5px dashed var(--line);color:transparent}
 .choices.words .choice{font-size:calc(2.6rem*var(--scale))}
 @media (max-width:620px){.sent{font-size:calc(1.7rem*var(--scale))}.choices.words .choice{font-size:calc(1.7rem*var(--scale))}}
+
+/* ---------- Rechnen bis 100 und Einmaleins ---------- */
+.rod.gone i,.units i.gone{background:transparent;outline:2px dashed var(--muted);outline-offset:-2px}
+.rodsum{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;justify-content:center}
+.rodsum .plus{font-size:2em;font-weight:700;color:var(--muted);align-self:center}
+.groups{display:flex;flex-direction:column;gap:5px;align-items:center}
+.grp{display:flex;gap:3px;padding:4px 6px;border:2px solid var(--line);border-radius:10px;background:var(--surface)}
+.grp i{display:block;width:calc(var(--gs)*var(--scale));height:calc(var(--gs)*var(--scale));border-radius:50%;background:var(--ch4)}

@@ -155,7 +155,7 @@ const subj=x=>x.num||x.calc?"zahlen":"lesen";
 const isOpen=(p,i)=>{if(!p.sequential)return true;const x=LESSONS[i],prev=LESSONS.slice(0,i).reverse().find(y=>subj(y)===subj(x));return !prev||doneCount(p,prev)===3};
 const fmtL1=l=>P().caps?l:l.length>1?capL(l):l+l.toLowerCase();
 const CHAPTERS=[{t:"Buchstaben",d:"Laute hören und Buchstaben erkennen",s:"lesen"},{t:"Silben",d:"Silben lesen und Wörter bauen",s:"lesen"},
- {t:"Zahlen",d:"Zahlen bis 100 sehen, hören und erkennen",s:"zahlen"},{t:"Rechnen",d:"Plus und Minus – Schritt für Schritt erklärt",s:"zahlen"},
+ {t:"Zahlen",d:"Zahlen bis 100 sehen, hören und erkennen",s:"zahlen"},{t:"Rechnen",d:"Plus, Minus und Mal – Schritt für Schritt erklärt",s:"zahlen"},
  {t:"Sätze",d:"Erste Sätze lesen und verstehen",s:"lesen"}];
 const SUBJECTS=[["lesen","📖 Lesen"],["zahlen","🔢 Zahlen & Rechnen"],["malen","🎨 Malen"],["basteln","✂️ Basteln"]];
 const chOf=x=>x.sent?4:x.syl?1:x.num?2:x.calc?3:0;
@@ -397,16 +397,24 @@ function taskBauen(first){const p=P(),t=G.tasks[G.i];
 
 /* ---------- Zahlen & Rechnen ---------- */
 const zw=n=>n===1?"ein":String(n);
-const sayEq=(t,withRes)=>`${t.a} ${t.op==="+"?"plus":"minus"} ${t.b}${withRes?` ist ${res(t)}`:""}`;
-const res=t=>t.op==="+"?t.a+t.b:t.a-t.b;
-const showEq=(t,r)=>`${t.a} ${t.op==="+"?"+":"−"} ${t.b} = ${r===undefined?'<span class="q">?</span>':r}`;
+const opWord=op=>op==="+"?"plus":op==="-"?"minus":"mal";
+const opSym=op=>op==="+"?"+":op==="-"?"−":"·";
+const sayEq=(t,withRes)=>`${t.a} ${opWord(t.op)} ${t.b}${withRes?` ist ${res(t)}`:""}`;
+const res=t=>t.op==="+"?t.a+t.b:t.op==="-"?t.a-t.b:t.a*t.b;
+const showEq=(t,r)=>`${t.a} ${opSym(t.op)} ${t.b} = ${r===undefined?'<span class="q">?</span>':r}`;
 /* Zehnerfeld (2 × 5, "Kraft der Fünf"); bis 20 zwei Felder */
 function frames(cells,split){const nf=Math.max(1,Math.ceil(cells.length/10));let h="";
  for(let f=0;f<nf;f++){h+=`<div class="frame${split&&f===0?" ten":""}">`;for(let k=0;k<10;k++){const c=cells[f*10+k];h+=`<span class="cell">${c?`<i class="dot ${c}"></i>`:""}</span>`}h+="</div>"}
  return `<div class="frames" aria-hidden="true">${h}</div>`}
 /* ab 21: Zehnerstangen und Einerwürfel */
-function rods(n){const t=Math.floor(n/10),u=n%10;
- return `<div class="rods" aria-hidden="true">${Array.from({length:t},()=>`<span class="rod">${"<i></i>".repeat(10)}</span>`).join("")}${u?`<span class="units">${"<i></i>".repeat(u)}</span>`:""}</div>`}
+function rods(n,goneT=0,goneU=0){const t=Math.floor(n/10),u=n%10;
+ return `<div class="rods" aria-hidden="true">${Array.from({length:t},(_,k)=>`<span class="rod${k>=t-goneT?" gone":""}">${"<i></i>".repeat(10)}</span>`).join("")}${u?`<span class="units">${Array.from({length:u},(_,k)=>`<i${k>=u-goneU?' class="gone"':""}></i>`).join("")}</span>`:""}</div>`}
+/* Einmaleins: a Gruppen mit je b Punkten */
+const groups=(a,b)=>`<div class="groups" style="--gs:${Math.max(a,b)>=8?12:Math.max(a,b)>=6?15:20}px" aria-hidden="true">${Array.from({length:a},()=>`<span class="grp">${"<i></i>".repeat(b)}</span>`).join("")}</div>`;
+/* Bild zu einer Aufgabe: Zehnerfeld bis 20, darüber Stangen und Würfel, beim Mal Gruppen */
+function calcPic(t){if(t.op==="·")return groups(t.a,t.b);
+ if(t.a<=20&&t.b<=20)return frames(t.op==="+"?[...Array(t.a).fill("d1"),...Array(t.b).fill("d2")]:[...Array(t.a-t.b).fill("d1"),...Array(t.b).fill("gone")]);
+ return t.op==="+"?`<div class="rodsum">${rods(t.a)}<span class="plus">+</span>${rods(t.b)}</div>`:rods(t.a,Math.floor(t.b/10),t.b%10)}
 const qty=n=>n<=20?frames(Array(n).fill("d1")):rods(n);
 const zeText=n=>{const z=Math.floor(n/10),u=n%10;return n<10?"":n===100?"10 Zehner":`${z} Zehner${u?` · ${u} Einer`:""}`};
 const zeSay=n=>{const z=Math.floor(n/10),u=n%10;return n<10?"":n===100?"10 Zehner.":`${zw(z)} Zehner${u?` und ${zw(u)} Einer`:""}.`.replace(/^./,c=>c.toUpperCase())};
@@ -417,15 +425,41 @@ function numOpts(n,count,lo,hi){const c=[];const add=v=>{if(v!==n&&v>=0&&v<=100&
  const r=reverse(n);if(r!==null)add(r);[1,-1,2,-2,10,-10,3,-3].forEach(d=>add(n+d));
  const near=c.filter(v=>v>=lo-2&&v<=hi+2);return shuffle([n,...(near.length>=count-1?near:c).slice(0,count-1)])}
 function calcOpts(t,count){const r=res(t),c=[];const add=v=>{if(v!==r&&v>=0&&!c.includes(v))c.push(v)};
- if(t.op==="-")add(t.a+t.b);[1,-1,2,-2,3].forEach(d=>add(r+d));return shuffle([r,...c.slice(0,count-1)])}
-function genCalc(L){let a,b;
+ if(t.op==="-")add(t.a+t.b);if(t.op==="·"){add(r+t.b);add(r-t.b);add(t.a+t.b)}if(t.b>=10&&t.op!=="·"){add(r+10);add(r-10)}[1,-1,2,-2,3].forEach(d=>add(r+d));return shuffle([r,...c.slice(0,count-1)])}
+function genCalc(L){let a,b;const op=L.ops?L.ops[rnd(0,L.ops.length-1)]:L.op;
+ if(L.kind==="cross"){if(op==="+"){a=rnd(2,9);b=rnd(11-a,9)}else{a=rnd(11,18);b=rnd(a-9,9);if(b<=a-10)b=a-9}return {a,b,op}}
+ if(L.kind==="tens"){if(op==="+"){a=10*rnd(1,8);b=10*rnd(1,9-a/10)}else{a=10*rnd(2,9);b=10*rnd(1,a/10-1)}return {a,b,op}}
+ if(L.kind==="h"){const z=rnd(2,8),u=rnd(1,8),k=rnd(0,2);a=10*z+u;
+  if(k===2&&op==="+")b=10*rnd(1,9-z);else if(op==="+")b=rnd(1,9-u);else if(k===2)b=10*rnd(1,z-1);else{a=10*z+rnd(2,9);b=rnd(1,a%10-1)}return {a,b,op}}
+ if(L.kind==="mul"){b=L.facs[rnd(0,L.facs.length-1)];a=rnd(1,10);return {a,b,op:"·"}}
  if(L.op==="+"){if(L.teen){const u=rnd(1,8);a=10+u;b=rnd(1,9-u)}else{a=rnd(1,L.max-1);b=rnd(1,L.max-a)}}
  else{if(L.teen){const u=rnd(2,9);a=10+u;b=rnd(1,u)}else{a=rnd(2,L.max);b=rnd(1,a-1)}}
  return {a,b,op:L.op}}
 function calcTasks(L,n){const out=[],seen=new Set();let guard=0;while(out.length<n&&guard++<200){const t=genCalc(L),k=t.a+t.op+t.b;if(!seen.has(k)){seen.add(k);out.push(t)}}return out}
 
 /* Schritte einer Erklärung: Menge zeigen, dazu-/wegnehmen, bei Zahlen über 10 in Zehner und Einer zerlegen */
-function calcSteps(t){const {a,b}=t,r=res(t),s=[],A=Array(a).fill("d1");
+function calcSteps(t){const {a,b}=t,r=res(t),s=[],A=Array(a).fill("d1"),z=n=>Math.floor(n/10),e=n=>n%10,zw1=n=>n===1?"ein":String(n);
+ if(t.op==="·"){const seq=Array.from({length:a},(_,k)=>(k+1)*b).join(", ");
+  s.push({html:groups(a,b),eq:`${a} · ${b}`,say:a===1?`1 mal ${b} heißt: eine Gruppe mit ${b}.`:`${a} mal ${b} heißt: ${a} Gruppen mit je ${b}.`});
+  s.push({html:groups(a,b),eq:`${a} · ${b}`,say:`Wir zählen immer ${b} weiter: ${seq}.`});
+  s.push({html:groups(a,b),eq:`${a} · ${b} = ${r}`,say:`Also ist ${a} mal ${b} gleich ${r}.`});return s}
+ if(a>20||b>20||r>20){const tens=b%10===0;
+  s.push({html:rods(a),eq:`${a}`,say:e(a)?`${a} sind ${zw1(z(a))} Zehner und ${zw1(e(a))} Einer.`:`${a} sind ${zw1(z(a))} Zehner.`});
+  if(t.op==="+"){s.push({html:`<div class="rodsum">${rods(a)}<span class="plus">+</span>${rods(b)}</div>`,eq:`${a} + ${b}`,say:tens?(z(b)===1?"Dazu kommt ein Zehner.":`Dazu kommen ${z(b)} Zehner.`):(b===1?"Dazu kommt ein Einer.":`Dazu kommen ${b} Einer.`)});
+   s.push({html:rods(r),eq:`${a} + ${b}`,say:tens?`${z(a)} Zehner plus ${z(b)} Zehner sind ${z(r)} Zehner.`:`${e(a)} Einer plus ${b} Einer sind ${e(r)} Einer.`})}
+  else{s.push({html:rods(a,z(b)*(tens?1:0),tens?0:b),eq:`${a} − ${b}`,say:tens?(z(b)===1?"Wir nehmen einen Zehner weg.":`Wir nehmen ${z(b)} Zehner weg.`):(b===1?"Wir nehmen einen Einer weg.":`Wir nehmen ${b} Einer weg.`)});
+   s.push({html:rods(r),eq:`${a} − ${b}`,say:tens?`${z(a)} Zehner minus ${z(b)} Zehner sind ${z(r)} Zehner.`:`${e(a)} Einer minus ${b} Einer ${e(r)===1?"ist ein Einer":`sind ${e(r)} Einer`}.`})}
+  s.push({html:rods(r),eq:showEq(t,r).replace(/<[^>]+>/g,""),say:`Also ist ${sayEq(t)} gleich ${r}.`});return s}
+ if(t.op==="+"&&a<10&&r>10){const f=10-a,rest=b-f,C=[...A,...Array(b).fill("d2")];
+  s.push({cells:A,eq:`${a}`,say:`Das sind ${a}.`});
+  s.push({cells:[...A,...Array(f).fill("d2")],split:1,eq:`${a} + ${f} = 10`,say:`Wir füllen bis 10 auf: ${a} plus ${f} sind 10.`});
+  s.push({cells:C,split:1,eq:`10 + ${rest}`,say:`${b} sind ${f} und ${rest}. Dann kommen noch ${rest} dazu.`});
+  s.push({cells:C,split:1,eq:`${a} + ${b} = ${r}`,say:`10 und ${rest} sind ${r}. Also ist ${a} plus ${b} gleich ${r}.`});return s}
+ if(t.op==="-"&&a>10&&r<10){const u=a-10,rest=b-u;
+  s.push({cells:A,eq:`${a}`,say:`Das sind ${a}.`});
+  s.push({cells:[...Array(10).fill("d1"),...Array(u).fill("gone")],split:1,eq:`${a} − ${u} = 10`,say:`Erst bis 10: ${a} minus ${u} sind 10.`});
+  s.push({cells:[...Array(r).fill("d1"),...Array(b).fill("gone")],split:1,eq:`10 − ${rest}`,say:`${b} sind ${u} und ${rest}. Dann nehmen wir noch ${rest} weg.`});
+  s.push({cells:[...Array(r).fill("d1"),...Array(b).fill("gone")],split:1,eq:`${a} − ${b} = ${r}`,say:`Also ist ${a} minus ${b} gleich ${r}.`});return s}
  if(t.op==="+"){const C=[...A,...Array(b).fill("d2")];
   s.push({cells:A,eq:`${a}`,say:a===1?"Das ist einer.":`Das sind ${a}.`});
   s.push({cells:C,eq:`${a} + ${b}`,say:b===1?"Dazu kommt noch einer.":`Dazu kommen ${b}.`});
@@ -441,7 +475,7 @@ function calcSteps(t){const {a,b}=t,r=res(t),s=[],A=Array(a).fill("d1");
  return s}
 function explainRun(t,box){const my=++Speech.gen;const steps=calcSteps(t);
  const run=(async()=>{for(const st of steps){if(Speech.gen!==my)return;
-  box.innerHTML=`<div class="eqline">${st.eq}</div>${frames(st.cells,st.split)}<p class="say">${st.say}</p>`;
+  box.innerHTML=`<div class="eqline">${st.eq}</div>${st.html||frames(st.cells,st.split)}<p class="say">${st.say}</p>`;
   await Speech.say(st.say,{keep:true});await wait((P()&&P().tts)?350:1800)}})();
  Speech.current=run;return run}
 
@@ -492,7 +526,7 @@ function discoverCalc(){const t=G.pages[G.i];
  bind("next",()=>{if(G.i<G.pages.length-1){G.i++;discoverCalc()}else{const p=P();(p.prog[L.id]=p.prog[L.id]||{}).sogehts=1;save();result(1,1,"Du kennst jetzt den Rechenweg!")}})}
 
 function taskCalc(){const p=P(),t=G.tasks[G.i],r=res(t);G.wrong=0;const n=Math.min(p.choices,4);const opts=calcOpts(t,n);
- const pic=G.type==="bildrechnen"?frames(t.op==="+"?[...Array(t.a).fill("d1"),...Array(t.b).fill("d2")]:[...Array(t.a-t.b).fill("d1"),...Array(t.b).fill("gone")]):"";
+ const pic=G.type==="bildrechnen"?calcPic(t):"";
  const say=`Wie viel ist ${sayEq(t)}?`;
  view(`${topbar(dotsN(G.tasks.length,G.i))}<div class="stage"><div class="prompt explain" id="ex"><div class="eqline big" id="eq">${showEq(t)}</div>${pic}</div>
  <div class="choices" style="--n:${n}">${opts.map(v=>T("choice num",String(v),String(v),`data-v="${v}" aria-label="${v}"`)).join("")}</div>
@@ -502,7 +536,7 @@ function taskCalc(){const p=P(),t=G.tasks[G.i],r=res(t);G.wrong=0;const n=Math.m
  app.querySelectorAll(".choice").forEach(b=>b.onclick=async()=>{const myG=G;const fb=document.getElementById("fb"),v=+b.dataset.v;
   if(v===r){Input.pause(true);b.classList.add("right");track("R:"+L.id+":"+t.a+t.op+t.b,!G.wrong);if(!G.wrong)G.ok++;app.querySelectorAll(".choice").forEach(x=>x.disabled=true);
    const eq=document.getElementById("eq");if(eq)eq.innerHTML=showEq(t,r);
-   const msg=PRAISE[Math.random()*PRAISE.length|0];fb.className="feedback ok";fb.textContent=`${msg} ${t.a} ${t.op==="+"?"+":"−"} ${t.b} = ${r}`;
+   const msg=PRAISE[Math.random()*PRAISE.length|0];fb.className="feedback ok";fb.textContent=`${msg} ${t.a} ${opSym(t.op)} ${t.b} = ${r}`;
    await Speech.say(`${msg} ${sayEq(t,true)}.`);await wait(500);if(G!==myG)return;G.i++;G.i<G.tasks.length?taskCalc():finish()}
   else{G.wrong++;b.classList.add("wrong");b.disabled=true;fb.className="feedback no";fb.textContent="Noch nicht. Ich erkläre es dir.";Input.pause(true);
    await Speech.say("Noch nicht. Ich erkläre es dir.");await explainRun(t,document.getElementById("ex"));if(G!==myG)return;
@@ -699,7 +733,7 @@ function lernstand(p){const it=p.items||{};
  const dec=[...Array(10)].map((_,d)=>[d*10,d*10+9]);
  const calcL=LESSONS.filter(x=>x.calc);
  const pretty=k=>{const [t,...r]=k.split(":");const v=r.join(":");
-  return t==="T"?`Satz „${v}“`:t==="B"?`Buchstabe ${v}`:t==="S"?`Silbe ${v}`:t==="W"?`Wort „${v}“`:t==="Z"?`Zahl ${v}`:t==="R"?`Aufgabe ${v.split(":")[1].replace(/([+-])/," $1 ").replace("-","−")}`:k};
+  return t==="T"?`Satz „${v}“`:t==="B"?`Buchstabe ${v}`:t==="S"?`Silbe ${v}`:t==="W"?`Wort „${v}“`:t==="Z"?`Zahl ${v}`:t==="R"?`Aufgabe ${v.split(":")[1].replace(/([+\-·])/," $1 ").replace("-","−")}`:k};
  const weak=Object.entries(it).filter(([,v])=>v[1]>=2&&v[0]/v[1]<.6).sort((a,b)=>a[1][0]/a[1][1]-b[1][0]/b[1][1]).slice(0,8);
  const done=LESSONS.filter(x=>doneCount(p,x)===3).length,last=p.log.length?new Date(p.log[p.log.length-1].ts).toLocaleDateString("de-DE"):"–";
  const tile=(v,l)=>`<div class="tile"><b>${v}</b><span>${l}</span></div>`;

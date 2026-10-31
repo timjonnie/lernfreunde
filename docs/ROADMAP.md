@@ -38,7 +38,8 @@ im Web und als App im App Store und bei Google Play.
 - ✅ Anlaut korrigiert: Auto, Eis, Ei gehören zu AU/EI statt A/E
 - ✅ Kapitel „Sätze“: 2 Lektionen mit 12 Sätzen – Sätze lesen (Wort für Wort vorgelesen), Satz und Bild, Lückensatz
 - Lesen: Ä, Ö, Ü, ß, EU, CH, PF im Wort
-- Rechnen: Zehnerübergang, Rechnen bis 100, Einmaleins
+- ✅ Rechnen: Plus/Minus mit Zehnerübergang (erst bis 10 auffüllen), Rechnen mit Zehnern,
+  Plus und Minus bis 100 (Zehner und Einer getrennt), Einmaleins 2/5/10 und alle Reihen (Gruppen-Punktefeld)
 - Weitere Ausmalbilder und Bastelideen aus den Büchern
 
 ## Phase 5 – Konten und Datenbank
