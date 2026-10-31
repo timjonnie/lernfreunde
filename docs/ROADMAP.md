@@ -8,7 +8,11 @@ im Web und als App im App Store und bei Google Play.
 - Schriften selbst ausgeliefert statt von Google (DSGVO)
 - Automatische Veröffentlichung auf GitHub Pages, Netlify entfällt
 
-## Phase 2 – Stimme
+## Phase 2 – Stimme (läuft)
+- ✅ Skript + GitHub-Workflow „Stimmen erzeugen“: erzeugt fehlende Clips mit Juna,
+  so viele das Guthaben erlaubt, und macht beim nächsten Lauf weiter
+- ⏳ Clips mit Free-Credits erzeugen (nur zum Entwickeln; vor dem Verkauf mit
+  bezahltem Tarif neu erzeugen – Free-Clips sind nicht kommerziell lizenziert)
 - Heute sind nur 20 Sätze aufgenommen; alles andere spricht die Gerätestimme
   (klingt je nach Gerät sehr unterschiedlich).
 - Alle benötigten Texte aufnehmen (die App kennt ihre Liste selbst: `voiceInventory()`,
@@ -16,7 +20,6 @@ im Web und als App im App Store und bei Google Play.
 - Ganze Sätze aufnehmen statt Satzbausteine aneinanderzureihen – klingt natürlicher.
 - Buchstaben als **Laut** sprechen („mmm“) statt mit dem Buchstabennamen („em“) –
   wichtig für das Lesenlernen nach Anlaut-Methode.
-- Skript, das fehlende Aufnahmen automatisch mit ElevenLabs erzeugt.
 
 ## Phase 3 – Gestaltung und Bedienung (UI/UX)
 - Einheitliches Erscheinungsbild, eigene Figur/Maskottchen statt Emojis

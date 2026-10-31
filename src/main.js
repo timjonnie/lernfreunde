@@ -6,75 +6,14 @@ import "@fontsource/atkinson-hyperlegible/700.css";
 import { VOICE as VOICE_CLIPS } from "./data/voice.js";
 import { MOTIFS as MOTIF_LIST } from "./data/motifs.js";
 import { CRAFTS } from "./data/crafts.js";
+import { WORDS, LETTERS, LESSONS, GAMES, PRAISE, ROUND, COLORS, TOOL_NAME } from "./content.js";
+import { normT } from "./voice-inventory.js";
 
 /* Zeigt einen Hinweis statt einer leeren Seite, falls beim Start etwas schiefgeht */
 window.addEventListener("error",e=>{const a=document.getElementById("app");if(a&&!a.children.length)a.innerHTML='<div style="padding:24px;font:18px/1.5 system-ui,sans-serif"><h1 style="font-size:1.4em">Lernfreunde konnte nicht starten</h1><p>Bitte die Seite neu laden oder einen aktuellen Browser verwenden.</p><p style="opacity:.7;font-size:.85em">Technischer Hinweis: '+String(e.message||e.error||"Unbekannter Fehler").replace(/[<>&]/g,"")+'</p></div>'});
 /* ---------- Inhalte ---------- */
-const WORDS=[
- ["Maus","🐭"],["Mond","🌙"],["Melone","🍉"],["Apfel","🍎"],["Affe","🐒"],["Auto","🚗"],["Ameise","🐜"],
- ["Oma","👵"],["Ohr","👂"],["Orange","🍊"],["Oktopus","🐙"],
- ["Löwe","🦁"],["Löffel","🥄"],["Igel","🦔"],["Insel","🏝️"],["Ente","🦆"],["Eis","🍦"],["Elefant","🐘"],["Ei","🥚"],
- ["Uhr","⏰"],["Uhu","🦉"],["Ufo","🛸"],["Nase","👃"],["Nuss","🥜"],["Rakete","🚀"],["Rose","🌹"],["Rad","🚲"],
- ["Sonne","☀️"],["Socke","🧦"],["Tomate","🍅"],["Tiger","🐅"],["Tasse","☕"],["Hund","🐕"],["Haus","🏠"],["Hut","🎩"],
- ["Ball","⚽"],["Banane","🍌"],["Baum","🌳"],["Fisch","🐟"],["Feuer","🔥"],["Fuchs","🦊"],["Katze","🐈"],["Kuh","🐄"],["Kerze","🕯️"],
- ["Pilz","🍄"],["Pinguin","🐧"],["Dino","🦕"],["Daumen","👍"],["Giraffe","🦒"],["Gurke","🥒"],["Wal","🐋"],["Wolke","☁️"],
- ["Zug","🚆"],["Zitrone","🍋"],["Zebra","🦓"]
-].map(([w,e])=>({w,e,l:w[0].toUpperCase()}));
-const LETTERS=[...new Set(WORDS.map(x=>x.l))];
-/* Lektionen in Fibel-Reihenfolge: erst gut hörbare, dehnbare Laute, dann Stopplaute */
-const LESSONS=[
- {id:"l1",t:"Erste Laute",ls:["M","A","O"]},
- {id:"l2",t:"Neue Laute",ls:["L","I","E"]},
- {id:"l3",t:"Weiter geht's",ls:["U","N","R"]},
- {id:"l4",t:"Zischen und Hauchen",ls:["S","T","H"]},
- {id:"l5",t:"Kurze Laute",ls:["B","F","K"]},
- {id:"l6",t:"Die letzten Buchstaben",ls:["P","D","G","W","Z"]},
- {id:"l7",t:"Buchstaben wiederholen",ls:LETTERS.slice(),review:true},
- /* Silben: zuerst offene Silben (Konsonant + Vokal), dann ganze Wörter in Silben, zum Schluss lange Wörter */
- {id:"s1",t:"Silben mit M und L",syl:true,cv:true,show:"MA LI",sylls:["MA","MO","MI","ME","LA","LO","LI","LE"],
-  words:[["O-ma","👵"],["La-ma","🦙"],["Li-mo","🥤"],["Ma-ma","👩"],["Me-lo-ne","🍉"]]},
- {id:"s2",t:"Silben mit N und R",syl:true,cv:true,show:"NA RO",sylls:["NA","NO","NI","NE","RA","RO","RI","RE"],
-  words:[["Na-se","👃"],["Ro-se","🌹"],["Ra-ke-te","🚀"],["Ba-na-ne","🍌"],["Ro-bo-ter","🤖"]]},
- {id:"s3",t:"Silben mit S und T",syl:true,cv:true,show:"SO TA",sylls:["SA","SO","SI","SE","TA","TO","TI","TE"],
-  words:[["So-fa","🛋️"],["To-ma-te","🍅"],["Tas-se","☕"],["Son-ne","☀️"],["Ti-ger","🐅"],["Sa-lat","🥗"]]},
- {id:"s4",t:"Silben mit B, F und K",syl:true,cv:true,show:"KI FO",sylls:["BA","BI","BE","FA","FO","KA","KO","KI"],
-  words:[["Ki-wi","🥝"],["Ka-mel","🐪"],["Fo-to","📷"],["Ka-rot-te","🥕"],["Bie-ne","🐝"]]},
- {id:"s5",t:"Lange Wörter",syl:true,show:"GI·RAF·FE",
-  words:[["Gi-raf-fe","🦒"],["Pin-gu-in","🐧"],["E-le-fant","🐘"],["Zi-tro-ne","🍋"],["Ok-to-pus","🐙"],["Ba-na-ne","🍌"]]},
- /* Zahlen: Menge (Zehnerfeld bzw. Zehnerstangen), Zahlwort und Ziffer verbinden */
- {id:"z1",t:"Zahlen bis 10",num:true,show:"0 – 10",range:[0,10],pages:[0,1,2,3,4,5,6,7,8,9,10],games:["zentdecken","wieviele","zhoeren"]},
- {id:"z2",t:"Zahlen bis 20",num:true,show:"10 – 20",range:[10,20],pages:[10,11,12,13,14,15,16,17,18,19,20],games:["zentdecken","wieviele","zhoeren"]},
- {id:"z3",t:"Zahlen bis 50",num:true,show:"20 – 50",range:[20,50],pages:[20,23,30,34,40,46,50],games:["zentdecken","wieviele","zhoeren"]},
- {id:"z4",t:"Zahlen bis 100",num:true,show:"50 – 100",range:[50,100],pages:[50,57,60,70,72,80,90,95,100],games:["zentdecken","wieviele","zhoeren"]},
- /* Rechnen: erst mit Bildern, dann ohne; bei Fehlern wird der Rechenweg erklärt. Bis 20 ohne Zehnerübergang */
- {id:"r1",t:"Plus bis 5",calc:true,show:"2 + 3",op:"+",max:5,games:["sogehts","bildrechnen","rechnen"]},
- {id:"r2",t:"Plus bis 10",calc:true,show:"4 + 5",op:"+",max:10,games:["sogehts","bildrechnen","rechnen"]},
- {id:"r3",t:"Minus bis 10",calc:true,show:"7 − 3",op:"-",max:10,games:["sogehts","bildrechnen","rechnen"]},
- {id:"r4",t:"Plus bis 20",calc:true,show:"13 + 4",op:"+",max:20,teen:true,games:["sogehts","bildrechnen","rechnen"]},
- {id:"r5",t:"Minus bis 20",calc:true,show:"17 − 5",op:"-",max:20,teen:true,games:["sogehts","bildrechnen","rechnen"]}
-];
-LESSONS.forEach(x=>{if(!x.syl)return;x.words=x.words.map(([s,e])=>({segs:s.split("-"),w:s.replace(/-/g,""),e}));
- if(!x.cv)x.sylls=[...new Set(x.words.flatMap(w=>w.segs.map(s=>s.toUpperCase())))];
- x.games=["silben","hoeren","bauen"]});
-LESSONS.forEach(x=>{if(!x.games)x.games=["entdecken","anlaut","wortbild"]});
 const learned=L=>{const i=LESSONS.indexOf(L);return L.review?LETTERS:[...new Set(LESSONS.slice(0,i+1).flatMap(x=>x.ls||[]))]};
 const learnedSylls=L=>{const i=LESSONS.indexOf(L);return [...new Set(LESSONS.slice(0,i+1).flatMap(x=>x.sylls||[]))]};
-const GAMES={
- entdecken:{t:"Buchstaben entdecken",d:"Buchstabe, Bild und Wort ansehen und hören"},
- anlaut:{t:"Anlaut finden",d:"Womit fängt das Wort an?"},
- wortbild:{t:"Wort und Bild",d:"Das Wort lesen und das passende Bild finden"},
- silben:{t:"Silben entdecken",d:"Silben und Wörter ansehen und hören"},
- hoeren:{t:"Silbe hören",d:"Welche Silbe hörst du?"},
- bauen:{t:"Wörter bauen",d:"Setze das Wort aus Silben zusammen"},
- zentdecken:{t:"Zahlen entdecken",d:"Zahl, Menge und Name kennenlernen"},
- wieviele:{t:"Wie viele?",d:"Die Menge ansehen und die Zahl finden"},
- zhoeren:{t:"Zahl hören",d:"Welche Zahl hörst du?"},
- sogehts:{t:"So geht's",d:"Der Rechenweg Schritt für Schritt erklärt"},
- bildrechnen:{t:"Rechnen mit Bildern",d:"Punkte ansehen und das Ergebnis finden"},
- rechnen:{t:"Rechnen",d:"Aufgaben lösen – bei Fehlern gibt es eine Erklärung"}
-};
-const PRAISE=["Ja, richtig!","Super!","Toll gemacht!","Genau!","Prima!"];
-const ROUND=5;
 
 /* ---------- Speicher ---------- */
 const clone=x=>JSON.parse(JSON.stringify(x));
@@ -97,7 +36,6 @@ const P=()=>S.profiles.find(p=>p.id===S.cur);
 /* ---------- Sprache ---------- */
 /* ---------- Lehrerinnen-Stimme: aufgenommene Clips (ElevenLabs), sonst Sprachausgabe des Geräts ---------- */
 const VOICE=VOICE_CLIPS;
-const normT=s=>String(s).toLowerCase().replace(/&/g," und ").replace(/[.,!?:;„“"()–—]/g," ").trim().split(/\s+/).filter(Boolean);
 let VKEYS=null,VMAX=1;
 function voicePlan(text){if(!VKEYS){VKEYS=new Set(Object.keys(VOICE));VKEYS.forEach(k=>{VMAX=Math.max(VMAX,k.split(" ").length)})}
  const tk=normT(text),out=[];let miss=[];
@@ -138,27 +76,6 @@ const Speech={voice:null,gen:0,
    u.rate=o.rate||p.rate;let done=false;const fin=()=>{if(!done){done=true;res()}};
    u.onend=fin;u.onerror=fin;setTimeout(fin,600+text.length*110/(u.rate||1));speechSynthesis.speak(u)})}};
 /* Liste aller Aufnahmen, die die App braucht (Schlüssel = normalisierter Text) */
-function voiceInventory(){const out=[],seen=new Set();const add=(t,cat)=>{const k=normT(t).join(" ");if(!seen.has(k)){seen.add(k);out.push({k,t,cat})}};
- const PH=["Hallo! Welche Lektion möchtest du machen?","Lektion","Wir wiederholen alle Buchstaben.","Schritt","wie",
-  "Womit fängt das Wort an?","beginnt mit","Welches Bild passt?","Lies das Wort.","Noch nicht.","Versuch es nochmal.","Hör genau:","Hör genau.",
-  "Das ist","Ich erkläre es dir.","Baue das Wort.","Welche Silbe hörst du?","Welche Zahl hörst du?","Wie viele Punkte sind es?",
-  "Ein volles Feld sind 10.","Wie viele sind es?","Eine Stange sind 10, ein Würfel ist 1.","Wir zählen zusammen:","Zähle die Stangen:",
-  "Dann die Würfel:","Zehner","Einer","ein Zehner","ein Einer","und","Es sind","Hier ist kein Punkt.","Bei","hörst du zuerst die",
-  "Geschrieben wird aber zuerst die","denn das sind","Wie viel ist","plus","minus","ist","gleich","Also ist","sind","Das sind",
-  "Das ist einer.","Dazu kommt noch einer.","Dazu kommen","Zusammen sind es","Wir nehmen einen weg.","Wir nehmen","weg.","Übrig bleiben",
-  "Super gemacht!","Gut geübt!","geschafft!","Du hast alle Buchstaben angeschaut!","Du hast alle Silben angeschaut!",
-  "Du hast alle Zahlen angeschaut!","Du kennst jetzt den Rechenweg!","Zurück zur Startseite.","Zurück zu den Lektionen.","Zurück zur Lektion.",
-  "Nochmal hören.","Hören.","Weiter.","Zurück.","Nochmal erklären.","Nochmal spielen.","Nächste Lektion.","Zur Lektion.","noch gesperrt",
-  "Lesen.","Zahlen und Rechnen.","Malen.","Was möchtest du malen?","Wähle eine Farbe.","Wähle eine Farbe. Dann tippe auf eine Fläche.","Wähle zuerst eine Farbe.","Andere Farbe.","Toll gemalt!","Weiter malen.","Drucken.","Zur Bildauswahl.","Rückgängig.","Fertig.","Male zuerst etwas an.","Male mit dem Finger.","Freies Malen.","Neues Blatt.","Nochmal tippen, dann ist das Blatt leer.",...COLORS.map(c=>c[0]+"."),...MOTIFS.map(m=>m.w+"."),"Basteln.","Was möchtest du basteln?","Das brauchst du:","Los geht's.","Bastelbogen drucken.","Du hast es geschafft! Toll gemacht.","Noch etwas basteln.","Erst in der App ausmalen.","Nochmal von vorn.","Zurück zum Basteln.",...Object.values(TOOL_NAME).map(t=>t+"."),"Bastelbögen.",...CR.list.flatMap(c=>[c.t+".",...c.steps.map(s=>s.text)])];
- PRAISE.forEach(t=>add(t,"saetze"));PH.forEach(t=>add(t,"saetze"));
- LESSONS.forEach(x=>add(x.t+".","saetze"));Object.values(GAMES).forEach(g=>add(g.t+".","saetze"));
- for(let n=0;n<=100;n++)add(n+".","zahlen");
- LETTERS.forEach(l=>add(l+".","buchstaben"));
- const syl=new Set();LESSONS.forEach(x=>{(x.sylls||[]).forEach(s=>syl.add(s.toLowerCase()));(x.words||[]).forEach(w=>w.segs.forEach(s=>syl.add(s.toLowerCase())))});
- syl.forEach(s=>add(s[0].toUpperCase()+s.slice(1)+".","silben"));
- WORDS.forEach(w=>add(w.w+".","woerter"));LESSONS.forEach(x=>(x.words||[]).forEach(w=>add(w.w+".","woerter")));
- return out}
-window.voiceInventory=voiceInventory;
 
 /* ---------- Eingabe-Schicht: Tippen, Verweilen, 1-Taste-Scan, 2-Tasten-Scan ---------- */
 const Input={items:[],idx:-1,timer:null,paused:false,dwellT:null,
@@ -519,7 +436,6 @@ const BOOKS={name:"Die Malbücher von Tim Kipper",
 const MOTIFS=MOTIF_LIST;
 const motifUrl=m=>m.src;
 const LVL=["","leicht","mittel","knifflig"];
-const COLORS=[["Rot","#E53935"],["Orange","#FB8C00"],["Gelb","#FDD835"],["Grün","#43A047"],["Hellblau","#4FC3F7"],["Blau","#1E63C8"],["Lila","#8E44AD"],["Rosa","#F48FB1"],["Braun","#8D5A3B"],["Weiß","#FFFFFF"]];
 const PSZ=800;const hex=c=>[1,3,5].map(i=>parseInt(c.slice(i,i+2),16));
 /* Zerlegt ein Linienbild in Flächen (funktioniert auch mit Bildern aus den Malbüchern) */
 async function prepMotif(m){if(m.prep)return m.prep;
@@ -632,7 +548,6 @@ const TOOL_SVG={
  kleber:`<svg viewBox="0 0 64 64" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"><rect x="21" y="24" width="22" height="34" rx="3"/><rect x="23" y="8" width="18" height="16" rx="2" fill="currentColor"/><path d="M28 36 H36 M28 44 H36"/></g></svg>`,
  bogen:`<svg viewBox="0 0 64 64" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="4.5" stroke-linejoin="round"><path d="M14 6 H40 L52 18 V58 H14 Z"/><path d="M40 6 V18 H52"/><path d="M20 36 H46" stroke-dasharray="5 4"/></g></svg>`,
  haken:`<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="26" fill="none" stroke="currentColor" stroke-width="4.5"/><path d="M19 33 L28 42 L46 22" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>`};
-const TOOL_NAME={schere:"Schere",stift:"Stifte",kleber:"Kleber",bogen:"Bastelbogen",haken:"Fertig"};
 /* Bildausschnitte aus den Bastelbögen werden im Browser zugeschnitten */
 const cropImg=(c,cls="")=>`<img class="crop ${cls}" data-p="${c.p}" data-r="${c.r.join(",")}" alt="">`;
 const _pg={},_cr={};

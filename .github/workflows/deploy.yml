@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # Neue Sprachclips direkt veröffentlichen (Pushes aus Workflows lösen „push“ nicht aus)
+  workflow_run:
+    workflows: ["Stimmen erzeugen"]
+    types: [completed]
+    branches: [main]
 
 permissions:
   contents: read

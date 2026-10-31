@@ -1,0 +1,40 @@
+name: Stimmen erzeugen
+
+# Startet man von Hand: Actions → „Stimmen erzeugen“ → Run workflow.
+# Erzeugt fehlende Sprachclips mit ElevenLabs und speichert sie im gewählten Branch.
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Höchstens so viele Clips erzeugen (leer = so viele das Guthaben erlaubt)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: voice
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Fehlende Clips erzeugen
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          LIMIT: ${{ inputs.limit }}
+        run: node scripts/generate-voice.mjs ${LIMIT:+--limit "$LIMIT"}
+      - name: Neue Clips speichern
+        run: |
+          git add public/assets/voice src/data/voice.js
+          if git diff --cached --quiet; then echo "Keine neuen Clips."; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Neue Sprachclips (ElevenLabs, Juna)"
+          git push

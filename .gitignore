@@ -1,3 +1,9 @@
 node_modules/
 dist/
 .DS_Store
+# Local secrets written by `elevenlabs onboard`
+/.env.local
+
+# Lokale Geheimnisse (API-Schlüssel)
+.env
+.env*.local
