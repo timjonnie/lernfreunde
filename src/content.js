@@ -1,14 +1,20 @@
 /* Lerninhalte: Wörter, Lektionen, Spiele, Farben. Reine Daten – ohne Browser nutzbar (auch für Skripte). */
+/* Wörter zum Anlaut: [Wort, Bild] – Bild ist ein Emoji oder "img:<Sticker-ID>" (Motiv aus den Malbüchern);
+   bei Lauten aus mehreren Buchstaben (SCH, EI, AU) steht der Laut als drittes Feld */
 export const WORDS=[
- ["Maus","🐭"],["Mond","🌙"],["Melone","🍉"],["Apfel","🍎"],["Affe","🐒"],["Auto","🚗"],["Ameise","🐜"],
+ ["Maus","🐭"],["Mond","🌙"],["Melone","🍉"],["Apfel","🍎"],["Affe","🐒"],["Ananas","🍍"],["Ameise","🐜"],
  ["Oma","👵"],["Ohr","👂"],["Orange","🍊"],["Oktopus","🐙"],
- ["Löwe","🦁"],["Löffel","🥄"],["Igel","🦔"],["Insel","🏝️"],["Ente","🦆"],["Eis","🍦"],["Elefant","🐘"],["Ei","🥚"],
+ ["Löwe","🦁"],["Löffel","🥄"],["Igel","🦔"],["Insel","🏝️"],["Ente","🦆"],["Erdbeere","🍓"],["Elefant","🐘"],
  ["Uhr","⏰"],["Uhu","🦉"],["Ufo","🛸"],["Nase","👃"],["Nuss","🥜"],["Rakete","🚀"],["Rose","🌹"],["Rad","🚲"],
  ["Sonne","☀️"],["Socke","🧦"],["Tomate","🍅"],["Tiger","🐅"],["Tasse","☕"],["Hund","🐕"],["Haus","🏠"],["Hut","🎩"],
  ["Ball","⚽"],["Banane","🍌"],["Baum","🌳"],["Fisch","🐟"],["Feuer","🔥"],["Fuchs","🦊"],["Katze","🐈"],["Kuh","🐄"],["Kerze","🕯️"],
  ["Pilz","🍄"],["Pinguin","🐧"],["Dino","🦕"],["Daumen","👍"],["Giraffe","🦒"],["Gurke","🥒"],["Wal","🐋"],["Wolke","☁️"],
- ["Zug","🚆"],["Zitrone","🍋"],["Zebra","🦓"]
-].map(([w,e])=>({w,e,l:w[0].toUpperCase()}));
+ ["Zug","🚆"],["Zitrone","🍋"],["Zebra","🦓"],
+ ["Jacke","img:l_jacke"],["Jo-Jo","🪀"],["Vogel","img:l_vogel"],["Vulkan","🌋"],["Clown","🤡"],["Chamäleon","img:l_chamaeleon"],
+ ["Xylofon","img:l_xylofon"],["Yak","img:l_yak"],["Yoga","🧘"],["Qualle","img:l_qualle"],["Quadrat","🟥"],
+ ["Schaf","🐑","SCH"],["Schuh","👟","SCH"],["Schere","✂️","SCH"],["Schnecke","🐌","SCH"],
+ ["Eis","🍦","EI"],["Ei","🥚","EI"],["Eimer","🪣","EI"],["Auto","🚗","AU"],["Auge","👁️","AU"]
+].map(([w,e,l])=>({w,e,l:l||w[0].toUpperCase()}));
 export const LETTERS=[...new Set(WORDS.map(x=>x.l))];
 /* Lektionen in Fibel-Reihenfolge: erst gut hörbare, dehnbare Laute, dann Stopplaute */
 export const LESSONS=[
@@ -18,6 +24,9 @@ export const LESSONS=[
  {id:"l4",t:"Zischen und Hauchen",ls:["S","T","H"]},
  {id:"l5",t:"Kurze Laute",ls:["B","F","K"]},
  {id:"l6",t:"Die letzten Buchstaben",ls:["P","D","G","W","Z"]},
+ {id:"l8",t:"Neue Buchstaben",ls:["J","V","C"]},
+ {id:"l9",t:"Seltene Buchstaben",ls:["X","Y","Q"]},
+ {id:"l10",t:"Zwei Buchstaben, ein Laut",ls:["SCH","EI","AU"]},
  {id:"l7",t:"Buchstaben wiederholen",ls:LETTERS.slice(),review:true},
  /* Silben: zuerst offene Silben (Konsonant + Vokal), dann ganze Wörter in Silben, zum Schluss lange Wörter */
  {id:"s1",t:"Silben mit M und L",syl:true,cv:true,show:"MA LI",sylls:["MA","MO","MI","ME","LA","LO","LI","LE"],
@@ -68,6 +77,7 @@ export const TOOL_NAME={schere:"Schere",stift:"Stifte",kleber:"Kleber",bogen:"Ba
    Schreibweise so gewählt, dass Sprachausgaben den Laut statt des Buchstabennamens sprechen.
    Klingt ein Laut falsch: hier anpassen, den Clip in public/assets/voice löschen, „Stimmen erzeugen“ neu starten. */
 export const LAUT={A:"aaa",E:"eee",I:"iii",O:"ooo",U:"uuu",M:"mmmm",N:"nnnn",L:"llll",R:"rrrr",S:"ssss",F:"ffff",W:"wwww",H:"hhh",Z:"tsss",
- B:"bö",D:"dö",G:"gö",K:"kö",P:"pö",T:"tö"};
+ B:"bö",D:"dö",G:"gö",K:"kö",P:"pö",T:"tö",
+ J:"jjj",V:"ffff",C:"kö",X:"ks",Y:"jjj",Q:"kwö",SCH:"schhh",EI:"ei",AU:"au"};
 /* Was gesprochen wird, wenn ein Buchstabe vorkommt – je nach Einstellung Laut oder Buchstabenname */
 export const sayL=(l,laut=true)=>laut&&LAUT[l]?LAUT[l]:l;

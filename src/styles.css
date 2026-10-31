@@ -160,7 +160,7 @@ h1,h2{text-wrap:balance;margin:0}
 .pic{font-size:calc(6.5rem*var(--scale));line-height:1.05}
 .ask{font-size:1.25em;margin:0;max-width:30ch}
 .word{font-family:var(--font-learn);font-size:calc(4rem*var(--scale));font-weight:700;letter-spacing:.04em;line-height:1.1}
-.word .first{color:var(--accent)}
+.word .first{color:var(--dot)}
 .choices{display:grid;gap:16px;flex:1;min-height:0;grid-template-columns:repeat(var(--n),minmax(0,1fr));align-content:stretch}
 @media (max-width:620px){.choices[style*="--n:4"]{grid-template-columns:repeat(2,minmax(0,1fr))}.choice{font-size:calc(2.6rem*var(--scale));min-height:110px;padding:.2em .1em}.choices{gap:10px}.bar{gap:8px;justify-content:space-between}.bar .grow{order:3;flex-basis:100%}.choice.pict{font-size:calc(3.6rem*var(--scale))}}
 .choice{font-family:var(--font-learn);font-size:calc(4.2rem*var(--scale));font-weight:700;min-height:140px;display:flex;align-items:center;justify-content:center}
@@ -331,3 +331,7 @@ img.crop{display:block;max-width:100%;max-height:100%;object-fit:contain;backgro
 .legend{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0;color:var(--muted);font-size:.88em}
 .legend .lchip{flex-direction:row;min-width:0;font-size:.95em}
 ul.weak{margin:0;padding-left:1.2em;display:grid;gap:4px}
+
+/* Sticker als Bild zu einem Wort (statt Emoji) */
+.wimg{display:inline-block;width:1.15em;height:1.15em;object-fit:contain;vertical-align:middle}
+.choice .wimg{width:1.3em;height:1.3em}

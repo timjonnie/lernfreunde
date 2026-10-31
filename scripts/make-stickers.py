@@ -30,7 +30,8 @@ COLOR = {
     "Apfel": "#E53935", "Biene": "#FDD835", "Elefant": "#9AA5B8", "Fisch": "#4FC3F7", "Hund": "#C58B52",
     "Igel": "#8D5A3B", "Katze": "#FB8C00", "Maus": "#B0B7C3", "Tiger": "#FB8C00", "Zebra": "#FFFFFF",
     "Raupe": "#7CB342", "Delfin": "#4FC3F7", "Bus": "#FDD835", "Giraffe": "#F6C98B", "Löwe": "#F2B705",
-    "Dino": "#F6C98B",
+    "Dino": "#F6C98B", "Chamäleon": "#7CB342", "Jacke": "#E53935", "Vogel": "#4FC3F7", "Xylofon": "#C58B52",
+    "Yak": "#A1683A", "Qualle": "#F48FB1",
 }
 
 

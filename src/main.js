@@ -116,7 +116,11 @@ function cancelDwell(){clearTimeout(Input.dwellT);if(Input.dwellEl)Input.dwellEl
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
 const fmt=w=>P().caps?w.toUpperCase():w;
-const fmtL=l=>P().caps?l:l+" "+l.toLowerCase();
+/* Buchstabe bzw. Laut aus mehreren Buchstaben (SCH) in der eingestellten Schreibweise */
+const capL=l=>l[0]+l.slice(1).toLowerCase();
+const fmtL=l=>P().caps?l:capL(l)+" "+l.toLowerCase();
+/* Bild zu einem Wort: Emoji oder Sticker aus den Malbüchern ("img:<id>") */
+const emo=e=>e.startsWith("img:")?`<img class="wimg" src="assets/stickers/${e.slice(4)}.png" alt="">`:e;
 const T=(cls,say,html,attrs="")=>`<button class="tgt ${cls}" data-say="${esc(say)}" ${attrs}>${html}<span class="dwell"><i></i></span></button>`;
 function applyLook(){const p=P();document.body.dataset.size=p?p.size:"normal";document.body.dataset.hc=p&&p.hc?"1":"0";document.body.dataset.calm=p&&p.calm?"1":"0"}
 function view(html,child){app.innerHTML=html;if(child)app.dataset.child="1";else delete app.dataset.child;applyLook();cancelDwell();Input.pause(false);Input.refresh()}
@@ -149,7 +153,7 @@ const lp=(p,L)=>p.prog[L.id]||{};
 const doneCount=(p,L)=>{const g=lp(p,L),[a,b,c]=L.games;return (g[a]?1:0)+((g[b]||0)>=3?1:0)+((g[c]||0)>=3?1:0)};
 const subj=x=>x.num||x.calc?"zahlen":"lesen";
 const isOpen=(p,i)=>{if(!p.sequential)return true;const x=LESSONS[i],prev=LESSONS.slice(0,i).reverse().find(y=>subj(y)===subj(x));return !prev||doneCount(p,prev)===3};
-const fmtL1=l=>P().caps?l:l+l.toLowerCase();
+const fmtL1=l=>P().caps?l:l.length>1?capL(l):l+l.toLowerCase();
 const CHAPTERS=[{t:"Buchstaben",d:"Laute hören und Buchstaben erkennen",s:"lesen"},{t:"Silben",d:"Silben lesen und Wörter bauen",s:"lesen"},
  {t:"Zahlen",d:"Zahlen bis 100 sehen, hören und erkennen",s:"zahlen"},{t:"Rechnen",d:"Plus und Minus – Schritt für Schritt erklärt",s:"zahlen"}];
 const SUBJECTS=[["lesen","📖 Lesen"],["zahlen","🔢 Zahlen & Rechnen"],["malen","🎨 Malen"],["basteln","✂️ Basteln"]];
@@ -187,7 +191,7 @@ function lesson(){G=null;const p=P(),g=lp(p,L),ci=chOf(L);
  let glyph;if(L.num){glyph={zentdecken:String(L.range[0]+3),wieviele:"●●●",zhoeren:"👂"}}
  else if(L.calc){glyph={sogehts:"💡",bildrechnen:L.show.replace(/\d+/g,m=>"●".repeat(Math.min(+m,3))),rechnen:L.show+" = ?"}}
  else if(L.syl){glyph={silben:fmtSyl(L.sylls[0]),hoeren:"👂",bauen:L.words[0].e}}
- else{const w0=WORDS.find(w=>w.l===L.ls[0]);glyph={entdecken:fmtL(L.ls[0]),anlaut:w0.e,wortbild:fmt(w0.w)}}
+ else{const w0=WORDS.find(w=>w.l===L.ls[0]);glyph={entdecken:fmtL(L.ls[0]),anlaut:emo(w0.e),wortbild:fmt(w0.w)}}
  const stepName=["Kennenlernen","Üben","Anwenden"];
  view(`<div class="bar">${T("","Zurück zu den Lektionen","◀ Lektionen",'id="back"')}</div>
  <header class="lhead c${ci+1}"><div><div class="badge">${lname(L)}</div><h1 class="hi">${L.t}</h1></div>
@@ -212,8 +216,8 @@ const topbar=(mid,again=true)=>`<div class="bar">${T("","Zurück zur Lektion","�
 
 function discover(){const w=G.pages[G.i],l=w.l,word=fmt(w.w),text=`${sayL(l,P().laut)} wie ${w.w}.`;
  view(`${topbar(dotsN(G.pages.length,G.i),false)}
- <div class="stage"><div class="prompt" style="flex:1"><div class="letter">${fmtL(l)}</div><div class="pic" aria-hidden="true">${w.e}</div>
- <div class="word"><span class="first">${word[0]}</span>${word.slice(1)}</div></div>
+ <div class="stage"><div class="prompt" style="flex:1"><div class="letter">${fmtL(l)}</div><div class="pic" aria-hidden="true">${emo(w.e)}</div>
+ <div class="word"><span class="first">${word.slice(0,l.length)}</span>${word.slice(l.length)}</div></div>
  <div class="navrow">${T("","Zurück","◀ Zurück",`id="prev" ${G.i===0?"disabled":""}`)}${T("primary","Hören","🔊 Hören",'id="hear"')}${T("","Weiter","Weiter ▶",'id="next"')}</div></div>`,true);
  Speech.say(text);Input.refresh();
  bind("back",lesson);bind("hear",()=>{Speech.say(text);Input.refresh()});
@@ -225,9 +229,9 @@ function task(){const p=P(),t=G.tasks[G.i];G.wrong=0;const n=Math.min(p.choices,
  let opts,prompt,say;
  if(G.type==="anlaut"){let others=shuffle(known.filter(l=>l!==t.l));if(others.length<n-1)others=others.concat(shuffle(LETTERS.filter(l=>l!==t.l&&!others.includes(l))));
   opts=shuffle([t.l,...others.slice(0,n-1)]).map(l=>({v:l,html:fmtL(l).split(" ")[0],say:sayL(l,p.laut)}));
-  prompt=`<div class="pic" aria-hidden="true">${t.e}</div><p class="ask">Womit fängt das Wort an?</p>`;say=`${t.w}. Womit fängt das Wort an?`}
+  prompt=`<div class="pic" aria-hidden="true">${emo(t.e)}</div><p class="ask">Womit fängt das Wort an?</p>`;say=`${t.w}. Womit fängt das Wort an?`}
  else{let others=shuffle(WORDS.filter(x=>x.l!==t.l&&known.includes(x.l)));if(others.length<n-1)others=others.concat(shuffle(WORDS.filter(x=>x.l!==t.l&&!others.includes(x))));
-  opts=shuffle([t,...others.slice(0,n-1)]).map(x=>({v:x.w,html:x.e,say:x.w,pict:1}));
+  opts=shuffle([t,...others.slice(0,n-1)]).map(x=>({v:x.w,html:emo(x.e),say:x.w,pict:1}));
   prompt=`<div><div class="word">${fmt(t.w)}</div><p class="ask" style="margin-inline:auto">Welches Bild passt zum Wort?</p></div>`;
   say=p.autoRead?`${t.w}. Welches Bild passt?`:"Lies das Wort. Welches Bild passt?"}
  const correct=G.type==="anlaut"?t.l:t.w;
