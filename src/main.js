@@ -33,11 +33,14 @@ function load(){try{const r=localStorage.getItem("lernfreunde.v1");if(r)S=JSON.p
   {...clone(DEF),id:"p2",name:"Tim",face:"🐢",example:true,mode:"scan1",choices:2,size:"gross",calm:true,sequential:true,
    prog:{l1:{entdecken:1,anlaut:3}},log:[{g:"anlaut",l:"l1",ok:3,n:5,ts:ago(1)}]});S.seed2=true;save()}
  S.profiles.forEach(p=>{for(const k in DEF)if(p[k]===undefined)p[k]=clone(DEF[k])})
+ if(!S.seed3){const e=S.profiles.find(p=>p.id==="p1"&&p.example);if(e)e.items={"B:M":[4,4,0],"B:A":[5,5,0],"B:O":[3,4,0],"B:L":[3,3,0],"B:I":[2,4,0],"B:E":[4,5,0],"B:U":[1,3,0],"B:N":[1,2,0]};S.seed3=true}
  /* bestehende Profile: für schon geschaffte Lektionen nachträglich Sticker vergeben */
  S.profiles.forEach(p=>{if(p.stickerInit)return;p.stickerInit=true;LESSONS.forEach(x=>{if(doneCount(p,x)===3)giveSticker(p,"l:"+x.id,lessonPrefer(x))})});save()}
 function save(){try{localStorage.setItem("lernfreunde.v1",JSON.stringify(S))}catch(e){}}
 const P=()=>S.profiles.find(p=>p.id===S.cur);
 
+/* Lernstand pro Buchstabe, Silbe, Wort, Zahl und Rechenaufgabe: [richtig beim ersten Versuch, Versuche, zuletzt] */
+function track(key,ok){const p=P();if(!p||!key)return;const it=(p.items=p.items||{})[key]=p.items[key]||[0,0,0];it[1]++;if(ok)it[0]++;it[2]=Date.now()}
 /* ---------- Sprache ---------- */
 /* ---------- Lehrerinnen-Stimme: aufgenommene Clips (ElevenLabs), sonst Sprachausgabe des Geräts ---------- */
 const VOICE=VOICE_CLIPS;
@@ -234,7 +237,7 @@ function task(){const p=P(),t=G.tasks[G.i];G.wrong=0;const n=Math.min(p.choices,
  Speech.say(say);Input.refresh();
  bind("back",lesson);bind("again",()=>{Speech.say(say);Input.refresh()});
  app.querySelectorAll(".choice").forEach(b=>b.onclick=async()=>{const myG=G;const fb=document.getElementById("fb");
-  if(b.dataset.v===correct){Input.pause(true);b.classList.add("right");if(!G.wrong)G.ok++;
+  if(b.dataset.v===correct){Input.pause(true);b.classList.add("right");track(G.type==="anlaut"||G.type==="wortbild"?"B:"+t.l:"",!G.wrong);if(!G.wrong)G.ok++;
    app.querySelectorAll(".choice").forEach(x=>x.disabled=true);
    const msg=PRAISE[Math.random()*PRAISE.length|0];fb.className="feedback ok";fb.textContent=msg+" "+(G.type==="anlaut"?`${t.w} beginnt mit ${t.l}.`:fmt(t.w));
    await Speech.say(G.type==="anlaut"?`${msg} ${t.w} beginnt mit ${sayL(t.l,p.laut)}.`:`${msg} ${t.w}.`);
@@ -318,7 +321,7 @@ function taskHoeren(){const p=P(),t=G.tasks[G.i];G.wrong=0;const n=Math.min(p.ch
  Speech.say(say);Input.refresh();
  bind("back",lesson);bind("again",()=>{Speech.say(sayS(t)+".");Input.refresh()});
  app.querySelectorAll(".choice").forEach(b=>b.onclick=async()=>{const myG=G;const fb=document.getElementById("fb");
-  if(b.dataset.v===t){b.classList.add("right");if(!G.wrong)G.ok++;app.querySelectorAll(".choice").forEach(x=>x.disabled=true);
+  if(b.dataset.v===t){b.classList.add("right");track("S:"+t,!G.wrong);if(!G.wrong)G.ok++;app.querySelectorAll(".choice").forEach(x=>x.disabled=true);
    await praiseNext(fb,optSyl(t),()=>Speech.say(sayS(t)+".",{keep:true}))}
   else{G.wrong++;b.classList.add("wrong");b.disabled=true;fb.className="feedback no";fb.textContent="Noch nicht. Hör nochmal.";
    Input.pause(true);await Speech.say(`Noch nicht. Hör genau: ${sayS(t)}.`);Input.pause(false);Input.refresh()}})}
@@ -338,7 +341,7 @@ function taskBauen(first){const p=P(),t=G.tasks[G.i];
   Input.pause(true);
   if(b.dataset.v===exp){G.filled++;G.bad=[];
    if(G.filled<t.segs.length){await Speech.say(sayS(exp)+".");if(G!==myG)return;taskBauen(false);return}
-   if(!G.wrong)G.ok++;taskBauen(false);Input.pause(true);app.querySelectorAll(".choice").forEach(x=>x.disabled=true);
+   track("W:"+t.w,!G.wrong);if(!G.wrong)G.ok++;taskBauen(false);Input.pause(true);app.querySelectorAll(".choice").forEach(x=>x.disabled=true);
    await praiseNext(document.getElementById("fb"),fmt(t.w),()=>readWord(t))}
   else{G.wrong++;G.bad.push(b.dataset.v);b.classList.add("wrong");b.disabled=true;fb.className="feedback no";fb.textContent="Noch nicht. Hör genau.";
    await Speech.say("Noch nicht. Hör genau.");await readWord(t);Input.pause(false);Input.refresh()}})}
@@ -418,7 +421,7 @@ function taskNum(){const p=P(),t=G.tasks[G.i];G.wrong=0;const n=Math.min(p.choic
  Speech.say(say);Input.refresh();
  bind("back",lesson);bind("again",()=>{Speech.say(G.type==="zhoeren"?`${t}.`:say);Input.refresh()});
  app.querySelectorAll(".choice").forEach(b=>b.onclick=async()=>{const myG=G;const fb=document.getElementById("fb"),v=+b.dataset.v;
-  if(v===t){Input.pause(true);b.classList.add("right");if(!G.wrong)G.ok++;app.querySelectorAll(".choice").forEach(x=>x.disabled=true);
+  if(v===t){Input.pause(true);b.classList.add("right");track("Z:"+t,!G.wrong);if(!G.wrong)G.ok++;app.querySelectorAll(".choice").forEach(x=>x.disabled=true);
    const msg=PRAISE[Math.random()*PRAISE.length|0];fb.className="feedback ok";fb.textContent=`${msg} ${t}${t>=10?" – "+zeText(t):""}`;
    await Speech.say(G.type==="wieviele"?`${msg} Es sind ${t}.`:`${msg} ${t}.`);await wait(500);if(G!==myG)return;G.i++;G.i<G.tasks.length?taskNum():finish()}
   else{G.wrong++;b.classList.add("wrong");b.disabled=true;fb.className="feedback no";Input.pause(true);let s;
@@ -448,7 +451,7 @@ function taskCalc(){const p=P(),t=G.tasks[G.i],r=res(t);G.wrong=0;const n=Math.m
  Speech.say(say);Input.refresh();
  bind("back",lesson);bind("again",()=>{Speech.say(say);Input.refresh()});
  app.querySelectorAll(".choice").forEach(b=>b.onclick=async()=>{const myG=G;const fb=document.getElementById("fb"),v=+b.dataset.v;
-  if(v===r){Input.pause(true);b.classList.add("right");if(!G.wrong)G.ok++;app.querySelectorAll(".choice").forEach(x=>x.disabled=true);
+  if(v===r){Input.pause(true);b.classList.add("right");track("R:"+L.id+":"+t.a+t.op+t.b,!G.wrong);if(!G.wrong)G.ok++;app.querySelectorAll(".choice").forEach(x=>x.disabled=true);
    const eq=document.getElementById("eq");if(eq)eq.innerHTML=showEq(t,r);
    const msg=PRAISE[Math.random()*PRAISE.length|0];fb.className="feedback ok";fb.textContent=`${msg} ${t.a} ${t.op==="+"?"+":"−"} ${t.b} = ${r}`;
    await Speech.say(`${msg} ${sayEq(t,true)}.`);await wait(500);if(G!==myG)return;G.i++;G.i<G.tasks.length?taskCalc():finish()}
@@ -634,14 +637,49 @@ function printPages(srcs){let pr=document.getElementById("print-area");if(!pr){p
 
 let editId=null,delArm=false;
 function adult(){S.cur=null;editId=editId&&S.profiles.find(p=>p.id===editId)?editId:S.profiles[0]?.id;delArm=false;renderAdult()}
+let adultTab="stand";
+const names={entdecken:"Entdecken",anlaut:"Anlaut",wortbild:"Wort & Bild",silben:"Silben entdecken",hoeren:"Silbe hören",bauen:"Wörter bauen",zentdecken:"Zahlen entdecken",wieviele:"Wie viele?",zhoeren:"Zahl hören",sogehts:"So geht's",bildrechnen:"Rechnen mit Bildern",rechnen:"Rechnen"};const lnum=id=>{const x=LESSONS.find(y=>y.id===id);return x?lname(x)+" · ":""};
+/* Lernstand: was sitzt, was übt das Kind noch? Grundlage sind die erfassten ersten Versuche (track) */
+function lernstand(p){const it=p.items||{};
+ const agg=keys=>keys.reduce((a,k)=>{const v=it[k];if(v){a[0]+=v[0];a[1]+=v[1]}return a},[0,0]);
+ const cls=([ok,n])=>!n?"none":n>=2&&ok/n>=.8?"good":ok/n<.6?"weak":"mid";
+ const tip=([ok,n])=>n?`${ok} von ${n} beim ersten Versuch richtig`:"noch nicht geübt";
+ const chip=(label,a,learn)=>`<span class="lchip ${cls(a)}${learn?" learn":""}" title="${tip(a)}">${esc(label)}<small>${a[1]?Math.round(a[0]/a[1]*100)+" %":"–"}</small></span>`;
+ const keysOf=pre=>Object.keys(it).filter(k=>k.startsWith(pre));
+ const sylls=[...new Set(LESSONS.flatMap(x=>x.sylls||[]))];
+ const dec=[...Array(10)].map((_,d)=>[d*10,d*10+9]);
+ const calcL=LESSONS.filter(x=>x.calc);
+ const pretty=k=>{const [t,...r]=k.split(":");const v=r.join(":");
+  return t==="B"?`Buchstabe ${v}`:t==="S"?`Silbe ${v}`:t==="W"?`Wort „${v}“`:t==="Z"?`Zahl ${v}`:t==="R"?`Aufgabe ${v.split(":")[1].replace(/([+-])/," $1 ").replace("-","−")}`:k};
+ const weak=Object.entries(it).filter(([,v])=>v[1]>=2&&v[0]/v[1]<.6).sort((a,b)=>a[1][0]/a[1][1]-b[1][0]/b[1][1]).slice(0,8);
+ const done=LESSONS.filter(x=>doneCount(p,x)===3).length,last=p.log.length?new Date(p.log[p.log.length-1].ts).toLocaleDateString("de-DE"):"–";
+ const tile=(v,l)=>`<div class="tile"><b>${v}</b><span>${l}</span></div>`;
+ return `<div class="lstand">
+ <div class="tiles">${tile(`${done} / ${LESSONS.length}`,"Lektionen geschafft")}${tile(starsOf(p),"Sterne")}${tile(`${(p.stickers||[]).length} / ${MOTIFS.length}`,"Sticker")}${tile(last,"zuletzt gespielt")}</div>
+ <p class="legend"><span class="lchip good">sitzt</span><span class="lchip mid">fast</span><span class="lchip weak">übt noch</span><span class="lchip none">noch nicht geübt</span> · Prozent = beim ersten Versuch richtig</p>
+ <section><h2>Übt noch</h2>${weak.length?`<ul class="weak">${weak.map(([k,v])=>`<li><b>${esc(pretty(k))}</b> – ${tip(v)}</li>`).join("")}</ul>`:`<p class="note">Noch nichts auffällig. Hier erscheint, was beim ersten Versuch oft danebengeht.</p>`}</section>
+ <section><h2>Buchstaben</h2><div class="lchips">${LETTERS.map(l=>chip(l,agg(["B:"+l]),true)).join("")}</div></section>
+ <section><h2>Silben</h2><div class="lchips">${sylls.map(x=>chip(x,agg(["S:"+x]),true)).join("")}</div></section>
+ <section><h2>Zahlen</h2><div class="lchips">${dec.map(([a,b])=>chip(`${a}–${b}`,agg(keysOf("Z:").filter(k=>{const n=+k.slice(2);return n>=a&&n<=b})))).join("")}${chip("100",agg(["Z:100"]))}</div></section>
+ <section><h2>Rechnen</h2><div class="lchips">${calcL.map(x=>chip(x.t,agg(keysOf("R:"+x.id+":")))).join("")}</div></section>
+ ${keysOf("W:").length?`<section><h2>Wörter bauen</h2><div class="lchips">${keysOf("W:").map(k=>chip(k.slice(2),agg([k]),true)).join("")}</div></section>`:""}
+ <div class="stats"><b>Lektionen</b><table>${LESSONS.map((x,i)=>{const g=lp(p,x);return `<tr><td>${lname(x)}</td><td>${x.t}</td><td>${"★".repeat(doneCount(p,x))}${"☆".repeat(3-doneCount(p,x))}</td></tr>`}).join("")}</table><b>Zuletzt gespielt</b>${p.log.length?`<table>${p.log.slice(-6).reverse().map(r=>`<tr><td>${new Date(r.ts).toLocaleDateString("de-DE")}</td><td>${lnum(r.l)}${names[r.g]||r.g}</td><td>${r.ok} von ${r.n} beim ersten Versuch</td></tr>`).join("")}</table>`:"<p>Noch keine Runden.</p>"}</div>
+ </div>`}
 function renderAdult(){const p=S.profiles.find(x=>x.id===editId);
  const sel=(id,label,val,opts)=>`<label class="f">${label}<select id="${id}">${opts.map(([v,t])=>`<option value="${v}" ${String(v)===String(val)?"selected":""}>${t}</option>`).join("")}</select></label>`;
  const chk=(id,label,val)=>`<label class="c"><input type="checkbox" id="${id}" ${val?"checked":""}>${label}</label>`;
- const names={entdecken:"Entdecken",anlaut:"Anlaut",wortbild:"Wort & Bild",silben:"Silben entdecken",hoeren:"Silbe hören",bauen:"Wörter bauen",zentdecken:"Zahlen entdecken",wieviele:"Wie viele?",zhoeren:"Zahl hören",sogehts:"So geht's",bildrechnen:"Rechnen mit Bildern",rechnen:"Rechnen"};const lnum=id=>{const x=LESSONS.find(y=>y.id===id);return x?lname(x)+" · ":""};
- view(`<div class="bar"><button class="plain" id="out">⌂ Zurück zum Kinderbereich</button><div class="grow"><h1>Einstellungen für Erwachsene</h1></div></div>
+ const tabs=[["stand","📊 Lernstand"],["set","⚙️ Einstellungen"],["druck","🖨️ Drucken & Bücher"]];
+ view(`<div class="bar"><button class="plain" id="out">⌂ Zurück zum Kinderbereich</button><div class="grow"><h1>Bereich für Erwachsene</h1></div></div>
  <div class="adult"><div class="plist">${S.profiles.map(x=>`<button data-id="${x.id}" aria-current="${x.id===editId}">${x.face} ${esc(x.name)}${x.example?' <span class="badge">Beispiel</span>':""}</button>`).join("")}
  <button class="plain" id="add">＋ Neues Profil</button></div>
- ${p?`<form class="settings" id="f">
+ ${p?`<div class="apane"><div class="atabs" role="tablist">${tabs.map(([k,t])=>`<button type="button" role="tab" data-tab="${k}" aria-selected="${adultTab===k}">${t}</button>`).join("")}</div>
+ ${adultTab==="stand"?lernstand(p):adultTab==="druck"?`<form class="settings" id="f"><fieldset><legend>Malen und Basteln</legend><p class="note" style="grid-column:1/-1;margin:0">Ausmalbilder zum Ausdrucken, ohne Farbe. Mehr davon gibt es in den Malbüchern von Tim Kipper.</p>
+ <div class="letters">${MOTIFS.map(m=>`<button type="button" class="plain" data-pm="${m.id}">🖨️ ${m.w}</button>`).join("")}</div>
+ <p class="note" style="grid-column:1/-1;margin:0">Bastelbögen zum Ausdrucken (einseitig):</p>
+ <div class="letters">${CR.list.map(c=>`<button type="button" class="plain" data-pk="${c.id}">🖨️ ${c.t}</button>`).join("")}</div>
+ <div style="grid-column:1/-1"><button type="button" class="plain danger" id="delpics">${p.gallery&&p.gallery.length?`Gemalte Bilder löschen (${p.gallery.length})`:"Noch keine gemalten Bilder"}</button></div></fieldset>
+ <div class="stats books"><b>📚 ${BOOKS.name}</b><p>Alle Ausmalbilder in der App stammen aus diesen Büchern. Zum Ausdrucken und Weitermalen auf Papier:</p>
+ <ul>${BOOKS.list.map(bk=>`<li><b>„${bk.t}“</b> – ${bk.d}</li>`).join("")}</ul></div></form>`:`<form class="settings" id="f">
  <fieldset><legend>Kind</legend><label class="f">Name<input type="text" id="name" value="${esc(p.name)}"></label>
  ${sel("face","Symbol",p.face,FACES.map(f=>[f,f]))}</fieldset>
  <fieldset><legend>Bedienung</legend>
@@ -658,24 +696,17 @@ function renderAdult(){const p=S.profiles.find(x=>x.id===editId);
  ${sel("size","Größe",p.size,[["normal","normal"],["gross","groß"],["sehrgross","sehr groß"]])}
  ${sel("rate","Sprechtempo",p.rate,[[0.7,"langsam"],[0.9,"normal"],[1.1,"zügig"]])}
  ${chk("tts","Sprachausgabe",p.tts)}${chk("hc","Hoher Kontrast",p.hc)}${chk("calm","Ruhig (keine Animationen)",p.calm)}</fieldset>
- <div class="stats"><b>Lektionen</b><table>${LESSONS.map((x,i)=>{const g=lp(p,x);return `<tr><td>${lname(x)}</td><td>${x.t}</td><td>${"★".repeat(doneCount(p,x))}${"☆".repeat(3-doneCount(p,x))}</td></tr>`}).join("")}</table><b>Zuletzt gespielt</b>${p.log.length?`<table>${p.log.slice(-6).reverse().map(r=>`<tr><td>${new Date(r.ts).toLocaleDateString("de-DE")}</td><td>${lnum(r.l)}${names[r.g]||r.g}</td><td>${r.ok} von ${r.n} beim ersten Versuch</td></tr>`).join("")}</table>`:"<p>Noch keine Runden.</p>"}</div>
- <fieldset><legend>Malen und Basteln</legend><p class="note" style="grid-column:1/-1;margin:0">Ausmalbilder zum Ausdrucken, ohne Farbe. Mehr davon gibt es in den Malbüchern von Tim Kipper.</p>
- <div class="letters">${MOTIFS.map(m=>`<button type="button" class="plain" data-pm="${m.id}">🖨️ ${m.w}</button>`).join("")}</div>
- <p class="note" style="grid-column:1/-1;margin:0">Bastelbögen zum Ausdrucken (einseitig):</p>
- <div class="letters">${CR.list.map(c=>`<button type="button" class="plain" data-pk="${c.id}">🖨️ ${c.t}</button>`).join("")}</div>
- <div style="grid-column:1/-1"><button type="button" class="plain danger" id="delpics">${p.gallery&&p.gallery.length?`Gemalte Bilder löschen (${p.gallery.length})`:"Noch keine gemalten Bilder"}</button></div></fieldset>
- <div class="stats books"><b>📚 ${BOOKS.name}</b><p>Alle Ausmalbilder in der App stammen aus diesen Büchern. Zum Ausdrucken und Weitermalen auf Papier:</p>
- <ul>${BOOKS.list.map(bk=>`<li><b>„${bk.t}“</b> – ${bk.d}</li>`).join("")}</ul></div>
  <div><button class="plain danger" id="del">${delArm?"Wirklich löschen? Nochmal tippen":"Profil löschen"}</button></div>
- </form>`:"<p>Lege ein Profil an.</p>"}</div>`,false);
+ </form>`}</div>`:"<p>Lege ein Profil an.</p>"}</div>`,false);
  bind("out",home);bind("add",()=>{const id="p"+Date.now();S.profiles.push({...clone(DEF),id,name:"Neues Kind",face:FACES[S.profiles.length%FACES.length]});editId=id;save();renderAdult()});
  app.querySelectorAll(".plist [data-id]").forEach(b=>b.onclick=()=>{editId=b.dataset.id;delArm=false;renderAdult()});
+app.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{adultTab=b.dataset.tab;renderAdult()});
  if(!p)return;
  app.querySelectorAll("[data-pm]").forEach(b=>b.onclick=()=>{const m=MOTIFS.find(x=>x.id===b.dataset.pm);printImg(motifUrl(m),m.w+" – zum Ausmalen")});
  app.querySelectorAll("[data-pk]").forEach(b=>b.onclick=()=>{const c=CR.list.find(x=>x.id===b.dataset.pk);printPages(c.pages.map(k=>CR.pages[k]))});
  bind("delpics",()=>{if(!p.gallery||!p.gallery.length)return;p.gallery=[];p.paint={};save();renderAdult()});
  bind("del",()=>{if(!delArm){delArm=true;renderAdult();return}S.profiles=S.profiles.filter(x=>x.id!==p.id);editId=S.profiles[0]?.id;save();renderAdult()});
- const f=document.getElementById("f");f.addEventListener("submit",e=>e.preventDefault());
+ const f=document.getElementById("f");if(!f)return;f.addEventListener("submit",e=>e.preventDefault());
  f.addEventListener("input",e=>{const el=e.target;if(el.dataset.l){p.letters=[...f.querySelectorAll("[data-l]:checked")].map(x=>x.dataset.l)}
   else if(el.type==="checkbox")p[el.id]=el.checked;
   else if(el.id==="name")p.name=el.value;

@@ -28,7 +28,8 @@ im Web und als App im App Store und bei Google Play.
 - ✅ Maskottchen: der Dino aus „Mal mit mir!“ in CI-Farben – Startseite, Ergebnis-Bildschirm, als Ausmalbild
 - ✅ Neue Startseite: Wortmarke, Dino mit Sprechblase, Kinder-Karten mit Sternen und „Weiter bei …“
 - ✅ Sticker-Album: 31 Sticker aus den Malbüchern für geschaffte Lektionen, fertige Bilder und Bastelarbeiten
-- Übersichtlicher Erwachsenenbereich mit Lernstand-Auswertung
+- ✅ Erwachsenenbereich mit Reitern (Lernstand, Einstellungen, Drucken & Bücher); Lernstand pro
+  Buchstabe, Silbe, Zahlenbereich, Rechenart und Wort – „sitzt / fast / übt noch“, Liste „Übt noch“
 - Offline nutzbar (installierbare Web-App)
 
 ## Phase 4 – Inhalte vervollständigen
