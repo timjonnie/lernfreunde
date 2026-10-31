@@ -33,4 +33,24 @@ Jeder Push auf `main` baut die App und veröffentlicht sie auf GitHub Pages
 (`.github/workflows/deploy.yml`). Einmalig nötig: im Repo unter
 **Settings → Pages → Build and deployment → Source** „GitHub Actions“ wählen.
 
+## Stimme
+
+Die App spricht mit aufgenommenen Clips (ElevenLabs, Stimme „Juna“). Fehlt ein Clip,
+spricht stattdessen die Stimme des Geräts. `npm run voice:check` zeigt, was noch fehlt.
+
+Fehlende Clips Schritt für Schritt erzeugen – pro Lauf so viele, wie das Guthaben hergibt:
+
+1. Einmalig: ElevenLabs → *Developers → API Keys* → Schlüssel anlegen, dann im Repo unter
+   **Settings → Secrets and variables → Actions → New repository secret** als
+   `ELEVENLABS_API_KEY` speichern.
+2. Im Repo **Actions → „Stimmen erzeugen“ → Run workflow** (Branch `main`).
+3. Die neuen Clips werden gespeichert und die App neu veröffentlicht.
+   Sind die Credits aufgebraucht, geht es beim nächsten Lauf weiter.
+
+Lokal geht es auch: `ELEVENLABS_API_KEY=… npm run voice`.
+
+Hinweis: Mit dem kostenlosen ElevenLabs-Tarif erzeugte Clips sind nicht für kommerzielle
+Nutzung lizenziert. Vor dem Verkauf mit einem bezahlten Tarif neu erzeugen
+(Clips löschen und den Workflow erneut starten).
+
 Fahrplan: [docs/ROADMAP.md](docs/ROADMAP.md)
