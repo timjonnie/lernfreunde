@@ -3,7 +3,7 @@
    Kennt die Datenstruktur der App nicht: main.js liefert und empfängt fertige Profil-Objekte. */
 import { initializeApp } from "firebase/app";
 import {
-  getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  initializeAuth, indexedDBLocalPersistence, browserLocalPersistence, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword,
   signOut, sendPasswordResetEmail, sendEmailVerification, deleteUser, connectAuthEmulator,
 } from "firebase/auth";
 import {
@@ -39,7 +39,8 @@ export const errText = e => ERR[e && e.code] || "Das hat nicht geklappt. Bitte s
 /* hooks: onUser(user|null), onRemote(changes:[{id,data}], removed:[id]), onStatus("synced"|"pending"|"offline") */
 export function createCloud(hooks) {
   const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
+  /* initializeAuth statt getAuth: läuft auch in der iOS-App (WKWebView), Anmeldung bleibt gespeichert */
+  const auth = initializeAuth(app, { persistence: [indexedDBLocalPersistence, browserLocalPersistence] });
   auth.languageCode = "de";
   const db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
   /* nur lokal zum Testen: ?emulator verbindet mit den Firebase-Emulatoren */

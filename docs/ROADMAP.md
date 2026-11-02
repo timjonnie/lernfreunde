@@ -54,8 +54,9 @@ im Web und als App im App Store und bei Google Play.
 - ✅ Entwürfe Datenschutzerklärung und Impressum (Platzhalter für Anschrift und E-Mail)
 - Später: Klassen mit mehreren Lehrkräften, Anmeldung per E-Mail-Link
 
-## Phase 6 – App-Stores
-- Verpackung als iOS- und Android-App mit Capacitor
-- Regeln für Kinder-Apps (Apple „Kids“, Google „Familien“): keine Werbung/Tracking,
-  Elternschranke (gibt es schon), keine Links nach außen
-- Entwicklerkonten: Apple (99 $/Jahr), Google (einmalig 25 $)
+## Phase 6 – App-Stores (läuft)
+- ✅ Capacitor: Android- und iOS-Projekt (`de.timkipper.lernfreunde`), Icons und Startbildschirm mit dem Dino
+- ✅ App-Anpassungen: Gerätestimme als Ersatz, Android-Zurück-Taste, kein Drucken, Anmeldung für iOS
+- ✅ Workflow baut Test-APK und signiertes Play-Bundle; iOS-Prüfbau von Hand
+- Anleitung und Store-Texte: [docs/STORES.md](STORES.md)
+- Offen: Upload-Schlüssel, Store-Einträge, Screenshots, Tests über das Konto des Papas
