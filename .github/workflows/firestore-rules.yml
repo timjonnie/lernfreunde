@@ -1,0 +1,46 @@
+name: Firestore-Regeln prüfen und veröffentlichen
+
+# Prüft die Sicherheitsregeln im Emulator (bei jedem Pull Request) und spielt sie nach dem Merge
+# auf main in Firebase ein. Braucht das Repo-Secret FIREBASE_SERVICE_ACCOUNT (Dienstkonto-JSON).
+on:
+  pull_request:
+    paths: ["firestore.rules", "tests/rules.test.mjs", "firebase.json"]
+  push:
+    branches: [main]
+    paths: ["firestore.rules", "firebase.json"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - run: npm run test:rules
+
+  deploy:
+    needs: test
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+      - run: npx firebase deploy --only firestore:rules --project lernfreunde-69dd8 --non-interactive

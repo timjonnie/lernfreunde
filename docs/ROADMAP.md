@@ -46,11 +46,13 @@ im Web und als App im App Store und bei Google Play.
   Plus und Minus bis 100 (Zehner und Einer getrennt), Einmaleins 2/5/10 und alle Reihen (Gruppen-Punktefeld)
 - Weitere Ausmalbilder und Bastelideen aus den Büchern
 
-## Phase 5 – Konten und Datenbank
-- Supabase (Server in der EU): Konten für Eltern bzw. Lehrkräfte, mehrere Kinder,
-  Fortschritt auf allen Geräten
-- App funktioniert weiter offline und gleicht später ab
-- Datenschutz für Kinderdaten: so wenig Daten wie möglich, Datenschutzerklärung, Impressum
+## Phase 5 – Konten und Datenbank (läuft)
+- ✅ Firebase (Frankfurt): Konten für Eltern bzw. Lehrkräfte mit E-Mail und Passwort, Kinder ohne Konto
+- ✅ Abgleich von Profilen, Einstellungen, Lernstand und Stickern; offline nutzbar, Zusammenführen ohne Datenverlust
+- ✅ Profile vom Gerät ins Konto übernehmen, Abmelden entfernt sie vom Gerät, Konto und alle Daten löschen
+- ✅ Sicherheitsregeln mit Tests im Emulator, automatisches Einspielen per GitHub-Workflow
+- ✅ Entwürfe Datenschutzerklärung und Impressum (Platzhalter für Anschrift und E-Mail)
+- Später: Klassen mit mehreren Lehrkräften, Anmeldung per E-Mail-Link
 
 ## Phase 6 – App-Stores
 - Verpackung als iOS- und Android-App mit Capacitor

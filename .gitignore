@@ -7,3 +7,6 @@ dist/
 # Lokale Geheimnisse (API-Schlüssel)
 .env
 .env*.local
+
+# Firebase-Emulatoren
+*-debug.log
