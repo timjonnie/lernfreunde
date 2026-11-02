@@ -9,6 +9,9 @@ import "@fontsource/lexend/700.css";
 import { VOICE as VOICE_CLIPS } from "./data/voice.js";
 import { MOTIFS as MOTIF_LIST } from "./data/motifs.js";
 import { CRAFTS } from "./data/crafts.js";
+import { Capacitor } from "@capacitor/core";
+import { TextToSpeech } from "@capacitor-community/text-to-speech";
+import { App as NativeApp } from "@capacitor/app";
 import { WORDS, LETTERS, LESSONS, GAMES, PRAISE, ROUND, COLORS, TOOL_NAME, sayL, sentText, gapWord } from "./content.js";
 import { normT } from "./voice-inventory.js";
 
@@ -20,6 +23,7 @@ const learnedSylls=L=>{const i=LESSONS.indexOf(L);return [...new Set(LESSONS.sli
 
 /* ---------- Speicher ---------- */
 const clone=x=>JSON.parse(JSON.stringify(x));
+const NATIVE=Capacitor.isNativePlatform();
 const DEF={subject:"lesen",name:"",face:"🦊",mode:"touch",scanMs:2000,dwellMs:1500,scanSpeak:true,choices:3,caps:true,laut:true,size:"normal",hc:false,calm:false,tts:true,rate:0.9,autoRead:true,sequential:false,prog:{},log:[],paint:{},gallery:[],craft:{},stickers:[],rewarded:{}};
 const FACES=["🦊","🐻","🐼","🐸","🦉","🐢","🐙","🦄"];
 let S={profiles:[],cur:null};
@@ -97,7 +101,7 @@ const Speech={voice:null,gen:0,
   pick();speechSynthesis.onvoiceschanged=pick},
  current:Promise.resolve(),
  stopAll(){try{AU&&AU.pause()}catch(e){}try{window.speechSynthesis&&speechSynthesis.cancel()}catch(e){}
-  const NT=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.TextToSpeech;if(NT)NT.stop().catch(()=>{})},
+  const NT=NATIVE?TextToSpeech:null;if(NT)NT.stop().catch(()=>{})},
  say(text,o={}){if(!o.keep)this.gen++;const p=P();document.getElementById("live").textContent=text;
   if(!p||!p.tts)return(this.current=Promise.resolve());
   if(AU&&VKEYS!==false&&Object.keys(VOICE).length){const my=this.gen;if(!o.keep)this.stopAll();
@@ -109,7 +113,7 @@ const Speech={voice:null,gen:0,
    return this.current}
   return(this.current=this.tts(text,o))},
  tts(text,o={}){const p=P();
-  const NT=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.TextToSpeech;
+  const NT=NATIVE?TextToSpeech:null;
   if(NT){/* App-Version: native Sprachausgabe von iOS/Android */
    const r=o.rate||p.rate;NT.stop().catch(()=>{});
    return Promise.race([NT.speak({text,lang:"de-DE",rate:r,pitch:1,volume:1,category:"playback"}).catch(()=>{}),wait(800+text.length*120/r)])}
@@ -873,6 +877,11 @@ app.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{adultTab=b.dataset.
   p.example=false;save();if(el.id!=="name")renderAdult()});
  f.addEventListener("change",e=>{if(e.target.id==="name")renderAdult()})}
 
+/* ---------- Store-App (Capacitor) ---------- */
+if(NATIVE){document.body.dataset.native="1";
+ /* Android-Zurück-Taste: eine Seite zurück statt die App zu schließen */
+ NativeApp.addListener("backButton",()=>{const b=document.getElementById("back")||document.getElementById("menu")||document.getElementById("home")||document.getElementById("out");if(b)b.click()})}
+else if("serviceWorker" in navigator)import("virtual:pwa-register").then(m=>m.registerSW({immediate:true})).catch(()=>{});
 load();Speech.init();home();
 /* Konto-Funktionen nachladen, ohne den Start zu bremsen */
 setTimeout(cloudStart,300);

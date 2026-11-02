@@ -1,0 +1,25 @@
+name: iOS-App prüfen
+
+# Baut die iOS-App ohne Signatur für den Simulator, um zu prüfen, dass das Projekt kompiliert.
+# Nur von Hand starten: macOS-Läufe kosten bei privaten Repos zehnfach Minuten.
+# Für den App Store baut der Account-Inhaber in Xcode (siehe docs/STORES.md).
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npx cap sync ios
+      - name: Für den Simulator bauen (ohne Signatur)
+        run: xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build | tail -40
