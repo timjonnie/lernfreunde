@@ -197,7 +197,7 @@ form.settings{display:flex;flex-direction:column;gap:20px}
 fieldset{border:none;padding:0;margin:0;display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr))}
 legend{font-weight:700;font-size:1.05em;padding:0;margin-bottom:10px;grid-column:1/-1}
 label.f{display:flex;flex-direction:column;gap:4px;font-size:.92em;color:var(--muted)}
-label.f input[type=text],label.f select{font:inherit;color:var(--fg);background:var(--surface);border:2px solid var(--line);border-radius:10px;padding:.45em .6em}
+label.f input[type=text],label.f input[type=email],label.f input[type=password],label.f select{font:inherit;color:var(--fg);background:var(--surface);border:2px solid var(--line);border-radius:10px;padding:.45em .6em}
 label.c{display:flex;gap:10px;align-items:center}
 label.c input{width:22px;height:22px;flex-shrink:0;accent-color:var(--accent)}
 .letters{display:flex;flex-wrap:wrap;gap:6px;grid-column:1/-1}
@@ -405,3 +405,14 @@ ul.weak{margin:0;padding-left:1.2em;display:grid;gap:4px}
 }
 .step .gl{font-size:clamp(3rem,7vw,5rem)}
 .step.done{background:color-mix(in srgb,var(--good) 7%,var(--surface))}
+
+/* ---------- Konto ---------- */
+.acct{display:flex;flex-direction:column;gap:12px;max-width:62ch}
+.acct h2{font-size:1.2em;margin:0}.acct p{margin:0}
+.acct .consent{grid-column:1/-1;align-items:flex-start;font-size:.92em}
+.acct .consent input{margin-top:3px}
+.abtns{grid-column:1/-1;display:flex;gap:10px;flex-wrap:wrap}
+.plain.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+.syncst{font-weight:700}
+.amsg{grid-column:1/-1;min-height:1.4em;color:var(--fg)}
+.acct a,.amsg a{color:inherit}

@@ -27,7 +27,24 @@ npm run preview   # fertige Version lokal ansehen
 Schriften (Andika, Atkinson Hyperlegible) werden mit der App ausgeliefert, nicht von Google geladen (Datenschutz).
 Die App ist offline nutzbar: Ein Service Worker (vite-plugin-pwa) speichert beim ersten Besuch
 alle Dateien; Updates werden beim nächsten Start automatisch geladen.
-Daten liegen derzeit nur im Browser (`localStorage`, Schlüssel `lernfreunde.v1`).
+Ohne Konto liegen die Daten nur im Browser (`localStorage`, Schlüssel `lernfreunde.v1`).
+
+## Konten und Datenbank (Firebase)
+
+Eltern bzw. Lehrkräfte können im Erwachsenenbereich unter „Konto“ ein Konto anlegen (E-Mail und
+Passwort). Profile, Einstellungen, Lernstand und Sticker werden dann mit Firestore abgeglichen
+(Projekt `lernfreunde-69dd8`, Region Frankfurt `europe-west3`); gemalte Bilder bleiben auf dem Gerät.
+
+| Datei | Inhalt |
+|---|---|
+| `src/cloud.js` | Anmeldung und Abgleich, wird nach dem Start nachgeladen |
+| `firestore.rules` | Sicherheitsregeln: jedes Konto nur seine eigenen Daten |
+| `tests/rules.test.mjs` | Tests der Regeln im Emulator: `npm run test:rules` (braucht Java) |
+| `.github/workflows/firestore-rules.yml` | testet die Regeln und spielt sie nach dem Merge ein (Secret `FIREBASE_SERVICE_ACCOUNT`) |
+| `public/datenschutz.html`, `public/impressum.html` | Entwürfe, vor Veröffentlichung prüfen |
+
+Lokal mit Emulatoren testen: `npx firebase emulators:start --only auth,firestore`, dann die App
+unter `http://localhost:5173/?emulator` öffnen.
 
 ## Veröffentlichen
 

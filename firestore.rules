@@ -1,0 +1,37 @@
+rules_version = '2';
+
+// Lernfreunde: Jedes Konto (Eltern bzw. Lehrkraft) sieht und ändert nur seine eigenen Daten.
+//   konten/{uid}               – Einwilligung, angelegt beim Registrieren
+//   konten/{uid}/kinder/{kind} – ein Kinderprofil: Spitzname, Einstellungen, Fortschritt, Lernstand, Sticker
+// Gemalte Bilder werden nicht gespeichert. Alles andere ist gesperrt.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function owner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    match /konten/{uid} {
+      allow read, delete: if owner(uid);
+      allow create, update: if owner(uid)
+        && request.resource.data.keys().hasOnly(['consent', 'created', 'updated'])
+        && request.resource.data.consent is map
+        && request.resource.data.consent.version is string;
+
+      match /kinder/{kind} {
+        allow read, delete: if owner(uid);
+        allow create, update: if owner(uid) && validKind(request.resource.data);
+      }
+    }
+
+    function validKind(d) {
+      return d.keys().hasOnly([
+          'name', 'face', 'subject', 'mode', 'scanMs', 'dwellMs', 'scanSpeak', 'choices', 'caps', 'laut',
+          'size', 'hc', 'calm', 'tts', 'rate', 'autoRead', 'sequential', 'letters',
+          'prog', 'log', 'craft', 'stickers', 'rewarded', 'items', 'stickerInit', 'updated'])
+        && d.name is string && d.name.size() <= 40
+        && d.face is string && d.face.size() <= 16
+        && d.updated is int;
+    }
+  }
+}

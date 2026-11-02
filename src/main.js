@@ -36,7 +36,42 @@ function load(){try{const r=localStorage.getItem("lernfreunde.v1");if(r)S=JSON.p
  if(!S.seed3){const e=S.profiles.find(p=>p.id==="p1"&&p.example);if(e)e.items={"B:M":[4,4,0],"B:A":[5,5,0],"B:O":[3,4,0],"B:L":[3,3,0],"B:I":[2,4,0],"B:E":[4,5,0],"B:U":[1,3,0],"B:N":[1,2,0]};S.seed3=true}
  /* bestehende Profile: für schon geschaffte Lektionen nachträglich Sticker vergeben */
  S.profiles.forEach(p=>{if(p.stickerInit)return;p.stickerInit=true;LESSONS.forEach(x=>{if(doneCount(p,x)===3)giveSticker(p,"l:"+x.id,lessonPrefer(x))})});save()}
-function save(){try{localStorage.setItem("lernfreunde.v1",JSON.stringify(S))}catch(e){}}
+function save(){try{localStorage.setItem("lernfreunde.v1",JSON.stringify(S))}catch(e){}cloudPushSoon()}
+
+/* ---------- Konto und Abgleich (Firebase, wird nach dem Start nachgeladen) ---------- */
+/* Was ein Profil in der Datenbank speichert; gemalte Bilder (gallery, paint) bleiben auf dem Gerät */
+const SYNC_KEYS=["name","face","subject","mode","scanMs","dwellMs","scanSpeak","choices","caps","laut","size","hc","calm","tts","rate","autoRead","sequential","letters","prog","log","craft","stickers","rewarded","items","stickerInit"];
+let CLOUD=null,ACC=null,SYNC="",pushT=null,acctMsg="",acctDelArm=false;const pushed={};
+const syncData=p=>{const d={};SYNC_KEYS.forEach(k=>{if(p[k]!==undefined)d[k]=p[k]});return d};
+/* Zusammenführen zweier Stände desselben Profils: Fortschritt, Lernstand und Sticker gehen nie verloren,
+   bei Einstellungen gewinnt der neuere Stand */
+function mergeProfile(a,b){const newer=(b.updated||0)>(a.updated||0),m={};
+ SYNC_KEYS.forEach(k=>{m[k]=newer&&b[k]!==undefined?b[k]:a[k]!==undefined?a[k]:b[k]});
+ const prog={};new Set([...Object.keys(a.prog||{}),...Object.keys(b.prog||{})]).forEach(l=>{const x=(a.prog||{})[l]||{},y=(b.prog||{})[l]||{};prog[l]={};
+  new Set([...Object.keys(x),...Object.keys(y)]).forEach(g=>{prog[l][g]=Math.max(x[g]||0,y[g]||0)})});m.prog=prog;
+ const items={...(a.items||{})};Object.entries(b.items||{}).forEach(([k,v])=>{const w=items[k];if(!w||v[1]>w[1]||(v[1]===w[1]&&v[0]>w[0]))items[k]=v});m.items=items;
+ m.stickers=[...new Set([...(a.stickers||[]),...(b.stickers||[])])];
+ m.rewarded={...(b.rewarded||{}),...(a.rewarded||{})};
+ const seen=new Set();m.log=[...(a.log||[]),...(b.log||[])].filter(r=>{const k=r.ts+r.g+r.l;if(seen.has(k))return false;seen.add(k);return true}).sort((x,y)=>x.ts-y.ts).slice(-30);
+ const craft={...(b.craft||{})};Object.entries(a.craft||{}).forEach(([k,v])=>{const w=craft[k];craft[k]=w?{i:Math.max(v.i||0,w.i||0),done:!!(v.done||w.done)}:v});m.craft=craft;
+ m.stickerInit=!!(a.stickerInit||b.stickerInit);m.updated=Math.max(a.updated||0,b.updated||0);return m}
+function cloudPushSoon(){if(!CLOUD||!ACC)return;clearTimeout(pushT);pushT=setTimeout(()=>{if(!ACC||!CLOUD)return;const now=Date.now();
+ S.profiles.filter(p=>p.owner===ACC.uid).forEach(p=>{const d=syncData(p),j=JSON.stringify(d);if(pushed[p.id]===j)return;pushed[p.id]=j;p.updated=now;CLOUD.push(p.id,{...d,updated:now})});
+ try{localStorage.setItem("lernfreunde.v1",JSON.stringify(S))}catch(e){}},1200)}
+/* nur Startseite und Konto-Ansicht neu zeichnen – nie mitten in einer Übung */
+function cloudRefresh(){if(document.querySelector(".kids"))home();else if(document.querySelector(".atabs")&&(adultTab==="konto"||adultTab==="stand"))renderAdult()}
+function onRemote(changes,removed){if(!ACC)return;
+ changes.forEach(({id,data})=>{const local=S.profiles.find(p=>p.id===id);pushed[id]=JSON.stringify(syncData(data));
+  if(local)Object.assign(local,mergeProfile(local,data));else S.profiles.push({...clone(DEF),...data,id,owner:ACC.uid})});
+ if(removed.length){S.profiles=S.profiles.filter(p=>!(p.owner===ACC.uid&&removed.includes(p.id)));if(S.cur&&!P())S.cur=null}
+ save();cloudRefresh()}
+function onUser(u){const prev=ACC;ACC=u;Object.keys(pushed).forEach(k=>delete pushed[k]);
+ /* Abmelden: Profile dieses Kontos verlassen das Gerät (sie bleiben im Konto gespeichert) */
+ if(!u&&prev){S.profiles=S.profiles.filter(p=>p.owner!==prev.uid);if(S.cur&&!P())S.cur=null;save()}
+ cloudRefresh()}
+const syncText=()=>SYNC==="pending"?"⏳ Wird übertragen …":SYNC==="offline"?"Offline – wird abgeglichen, sobald Internet da ist":"✓ Alles gespeichert";
+function onStatus(s){SYNC=s;const el=document.getElementById("syncst");if(el)el.textContent=syncText()}
+async function cloudStart(){try{const m=await import("./cloud.js");CLOUD=m.createCloud({onUser,onRemote,onStatus});CLOUD.errText=m.errText}catch(e){CLOUD=null}}
 const P=()=>S.profiles.find(p=>p.id===S.cur);
 
 /* Lernstand pro Buchstabe, Silbe, Wort, Zahl und Rechenaufgabe: [richtig beim ersten Versuch, Versuche, zuletzt] */
@@ -751,15 +786,50 @@ function lernstand(p){const it=p.items||{};
  ${keysOf("W:").length?`<section><h2>Wörter bauen</h2><div class="lchips">${keysOf("W:").map(k=>chip(k.slice(2),agg([k]),true)).join("")}</div></section>`:""}
  <div class="stats"><b>Lektionen</b><table>${LESSONS.map((x,i)=>{const g=lp(p,x);return `<tr><td>${lname(x)}</td><td>${x.t}</td><td>${"★".repeat(doneCount(p,x))}${"☆".repeat(3-doneCount(p,x))}</td></tr>`}).join("")}</table><b>Zuletzt gespielt</b>${p.log.length?`<table>${p.log.slice(-6).reverse().map(r=>`<tr><td>${new Date(r.ts).toLocaleDateString("de-DE")}</td><td>${lnum(r.l)}${names[r.g]||r.g}</td><td>${r.ok} von ${r.n} beim ersten Versuch</td></tr>`).join("")}</table>`:"<p>Noch keine Runden.</p>"}</div>
  </div>`}
+/* Reiter „Konto“: anmelden, Profile übernehmen, abmelden, Konto löschen */
+function accountPane(){
+ if(!CLOUD)return `<section class="acct"><h2>Konto</h2><p class="note">Für Konten braucht die App einmal Internet. Ohne Konto funktioniert alles, die Daten bleiben dann nur auf diesem Gerät.</p></section>`;
+ const msg=`<p class="note amsg" id="amsg" role="status">${esc(acctMsg)}</p>`;
+ if(!ACC)return `<section class="acct"><h2>Mit Konto auf allen Geräten</h2>
+ <p class="note">Mit einem Konto sind Profile, Fortschritt, Lernstand und Sticker auf jedem Gerät gleich – für Eltern und Lehrkräfte. Kinder brauchen kein Konto. Ohne Konto bleibt alles nur auf diesem Gerät.</p>
+ <form class="settings" id="acctf" autocomplete="on"><fieldset><legend>Anmelden oder neues Konto</legend>
+ <label class="f">E-Mail<input type="email" id="aemail" autocomplete="email" inputmode="email"></label>
+ <label class="f">Passwort (mind. 6 Zeichen)<input type="password" id="apw" autocomplete="current-password"></label>
+ <label class="c consent"><input type="checkbox" id="aconsent"><span>Nur für ein neues Konto: Ich bin erziehungsberechtigt bzw. Lehrkraft und willige ein, dass für dieses Konto die Spitznamen der Kinder, ihre Einstellungen und ihr Lernstand auf Servern in Frankfurt gespeichert werden. Mehr dazu in der <a href="datenschutz.html" target="_blank" rel="noopener">Datenschutzerklärung</a>.</span></label>
+ <div class="abtns"><button type="submit" class="plain primary" id="alogin">Anmelden</button><button type="button" class="plain" id="areg">Neues Konto anlegen</button><button type="button" class="plain" id="areset">Passwort vergessen</button></div>
+ ${msg}</fieldset></form></section>`;
+ const loose=S.profiles.filter(x=>!x.owner&&!x.example),mine=S.profiles.filter(x=>x.owner===ACC.uid);
+ return `<section class="acct"><h2>Angemeldet</h2>
+ <p><b>${esc(ACC.email||"")}</b>${ACC.verified?"":" · E-Mail noch nicht bestätigt (Link im Postfach)"}</p>
+ <p class="syncst" id="syncst">${syncText()}</p>
+ <p class="note">${mine.length} ${mine.length===1?"Profil":"Profile"} im Konto. Änderungen werden automatisch gespeichert, auch offline – der Abgleich folgt, sobald Internet da ist.</p>
+ ${loose.length?`<div class="abtns"><button type="button" class="plain primary" id="aadopt">${loose.length} ${loose.length===1?"Profil":"Profile"} von diesem Gerät ins Konto übernehmen</button></div>`:""}
+ <div class="abtns"><button type="button" class="plain" id="aout">Abmelden</button></div>
+ <p class="note">Beim Abmelden werden die Profile dieses Kontos von diesem Gerät entfernt. Sie bleiben im Konto und kommen beim nächsten Anmelden zurück.</p>
+ <div class="abtns"><button type="button" class="plain danger" id="adel">${acctDelArm?"Wirklich alles löschen? Nochmal tippen":"Konto und alle Daten löschen"}</button></div>
+ <p class="note"><a href="datenschutz.html" target="_blank" rel="noopener">Datenschutzerklärung</a> · <a href="impressum.html" target="_blank" rel="noopener">Impressum</a></p>
+ ${msg}</section>`}
+function bindAccount(){const say=t=>{acctMsg=t;const el=document.getElementById("amsg");if(el)el.textContent=t};
+ const val=id=>(document.getElementById(id)||{}).value||"";
+ const run=async(fn,ok)=>{say("Einen Moment …");try{await fn();acctMsg=ok||"";renderAdult()}catch(e){say(CLOUD.errText(e))}};
+ const f=document.getElementById("acctf");if(f)f.addEventListener("submit",e=>{e.preventDefault();run(()=>CLOUD.signIn(val("aemail").trim(),val("apw")))});
+ bind("areg",()=>{if(!document.getElementById("aconsent").checked){say("Für ein neues Konto bitte zuerst die Einwilligung ankreuzen.");return}
+  run(()=>CLOUD.register(val("aemail").trim(),val("apw")),"Konto angelegt. Bitte die E-Mail bestätigen (Link im Postfach).")});
+ bind("areset",()=>{const e=val("aemail").trim();if(!e){say("Bitte zuerst die E-Mail-Adresse eintragen.");return}
+  run(()=>CLOUD.resetPassword(e),"Wir haben dir eine E-Mail zum Zurücksetzen geschickt.")});
+ bind("aadopt",()=>{S.profiles.forEach(x=>{if(!x.owner&&!x.example)x.owner=ACC.uid});save();acctMsg="Profile übernommen.";renderAdult()});
+ bind("aout",()=>run(()=>CLOUD.signOut()));
+ bind("adel",()=>{if(!acctDelArm){acctDelArm=true;renderAdult();return}acctDelArm=false;const uid=ACC.uid;
+  run(async()=>{await CLOUD.deleteAccount();S.profiles=S.profiles.filter(x=>x.owner!==uid);if(S.cur&&!P())S.cur=null;save()},"Konto und alle Daten wurden gelöscht.")})}
 function renderAdult(){const p=S.profiles.find(x=>x.id===editId);
  const sel=(id,label,val,opts)=>`<label class="f">${label}<select id="${id}">${opts.map(([v,t])=>`<option value="${v}" ${String(v)===String(val)?"selected":""}>${t}</option>`).join("")}</select></label>`;
  const chk=(id,label,val)=>`<label class="c"><input type="checkbox" id="${id}" ${val?"checked":""}>${label}</label>`;
- const tabs=[["stand","📊 Lernstand"],["set","⚙️ Einstellungen"],["druck","🖨️ Drucken & Bücher"]];
+ const tabs=p?[["stand","📊 Lernstand"],["set","⚙️ Einstellungen"],["druck","🖨️ Drucken & Bücher"],["konto","👤 Konto"]]:[["konto","👤 Konto"]];if(!p)adultTab="konto";
  view(`<div class="bar"><button class="plain" id="out">⌂ Zurück zum Kinderbereich</button><div class="grow"><h1>Bereich für Erwachsene</h1></div></div>
- <div class="adult"><div class="plist">${S.profiles.map(x=>`<button data-id="${x.id}" aria-current="${x.id===editId}">${x.face} ${esc(x.name)}${x.example?' <span class="badge">Beispiel</span>':""}</button>`).join("")}
+ <div class="adult"><div class="plist">${S.profiles.map(x=>`<button data-id="${x.id}" aria-current="${x.id===editId}">${x.face} ${esc(x.name)}${x.example?' <span class="badge">Beispiel</span>':""}${x.owner?' <span title="im Konto gespeichert">☁️</span>':""}</button>`).join("")}
  <button class="plain" id="add">＋ Neues Profil</button></div>
- ${p?`<div class="apane"><div class="atabs" role="tablist">${tabs.map(([k,t])=>`<button type="button" role="tab" data-tab="${k}" aria-selected="${adultTab===k}">${t}</button>`).join("")}</div>
- ${adultTab==="stand"?lernstand(p):adultTab==="druck"?`<form class="settings" id="f"><fieldset><legend>Malen und Basteln</legend><p class="note" style="grid-column:1/-1;margin:0">Ausmalbilder zum Ausdrucken, ohne Farbe. Mehr davon gibt es in den Malbüchern von Tim Kipper.</p>
+ ${p||adultTab==="konto"?`<div class="apane"><div class="atabs" role="tablist">${tabs.map(([k,t])=>`<button type="button" role="tab" data-tab="${k}" aria-selected="${adultTab===k}">${t}</button>`).join("")}</div>
+ ${adultTab==="konto"?accountPane():adultTab==="stand"?lernstand(p):adultTab==="druck"?`<form class="settings" id="f"><fieldset><legend>Malen und Basteln</legend><p class="note" style="grid-column:1/-1;margin:0">Ausmalbilder zum Ausdrucken, ohne Farbe. Mehr davon gibt es in den Malbüchern von Tim Kipper.</p>
  <div class="letters">${MOTIFS.map(m=>`<button type="button" class="plain" data-pm="${m.id}">🖨️ ${m.w}</button>`).join("")}</div>
  <p class="note" style="grid-column:1/-1;margin:0">Bastelbögen zum Ausdrucken (einseitig):</p>
  <div class="letters">${CR.list.map(c=>`<button type="button" class="plain" data-pk="${c.id}">🖨️ ${c.t}</button>`).join("")}</div>
@@ -786,12 +856,13 @@ function renderAdult(){const p=S.profiles.find(x=>x.id===editId);
  </form>`}</div>`:"<p>Lege ein Profil an.</p>"}</div>`,false);
  bind("out",home);bind("add",()=>{const id="p"+Date.now();S.profiles.push({...clone(DEF),id,name:"Neues Kind",face:FACES[S.profiles.length%FACES.length]});editId=id;save();renderAdult()});
  app.querySelectorAll(".plist [data-id]").forEach(b=>b.onclick=()=>{editId=b.dataset.id;delArm=false;renderAdult()});
-app.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{adultTab=b.dataset.tab;renderAdult()});
+app.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{adultTab=b.dataset.tab;acctMsg="";renderAdult()});
+ if(adultTab==="konto")bindAccount();
  if(!p)return;
  app.querySelectorAll("[data-pm]").forEach(b=>b.onclick=()=>{const m=MOTIFS.find(x=>x.id===b.dataset.pm);printImg(motifUrl(m),m.w+" – zum Ausmalen")});
  app.querySelectorAll("[data-pk]").forEach(b=>b.onclick=()=>{const c=CR.list.find(x=>x.id===b.dataset.pk);printPages(c.pages.map(k=>CR.pages[k]))});
  bind("delpics",()=>{if(!p.gallery||!p.gallery.length)return;p.gallery=[];p.paint={};save();renderAdult()});
- bind("del",()=>{if(!delArm){delArm=true;renderAdult();return}S.profiles=S.profiles.filter(x=>x.id!==p.id);editId=S.profiles[0]?.id;save();renderAdult()});
+ bind("del",()=>{if(!delArm){delArm=true;renderAdult();return}if(p.owner&&CLOUD)CLOUD.remove(p.id);S.profiles=S.profiles.filter(x=>x.id!==p.id);editId=S.profiles[0]?.id;save();renderAdult()});
  const f=document.getElementById("f");if(!f)return;f.addEventListener("submit",e=>e.preventDefault());
  f.addEventListener("input",e=>{const el=e.target;if(el.dataset.l){p.letters=[...f.querySelectorAll("[data-l]:checked")].map(x=>x.dataset.l)}
   else if(el.type==="checkbox")p[el.id]=el.checked;
@@ -803,3 +874,5 @@ app.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{adultTab=b.dataset.
  f.addEventListener("change",e=>{if(e.target.id==="name")renderAdult()})}
 
 load();Speech.init();home();
+/* Konto-Funktionen nachladen, ohne den Start zu bremsen */
+setTimeout(cloudStart,300);
