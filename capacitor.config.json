@@ -1,0 +1,10 @@
+{
+  "appId": "de.timkipper.lernfreunde",
+  "appName": "Lernfreunde",
+  "webDir": "dist",
+  "android": { "backgroundColor": "#F4F6FA" },
+  "ios": { "backgroundColor": "#F4F6FA", "contentInset": "never" },
+  "plugins": {
+    "SplashScreen": { "launchShowDuration": 800, "backgroundColor": "#F4F6FA", "showSpinner": false, "androidScaleType": "CENTER_INSIDE" }
+  }
+}

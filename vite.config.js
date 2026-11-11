@@ -9,7 +9,7 @@ export default defineConfig({
        Das Manifest liegt selbst gepflegt in public/manifest.webmanifest. */
     VitePWA({
       registerType: "autoUpdate",
-      injectRegister: "script-defer",
+      injectRegister: false, /* Registrierung in main.js – nicht in der Store-App */
       manifest: false,
       workbox: {
         globPatterns: ["**/*.{js,css,html,woff,woff2,png,svg,mp3,webmanifest}"],

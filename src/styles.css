@@ -416,3 +416,6 @@ ul.weak{margin:0;padding-left:1.2em;display:grid;gap:4px}
 .syncst{font-weight:700}
 .amsg{grid-column:1/-1;min-height:1.4em;color:var(--fg)}
 .acct a,.amsg a{color:inherit}
+
+/* Store-App: Drucken gibt es dort nicht */
+body[data-native="1"] #print,body[data-native="1"] [data-pm],body[data-native="1"] [data-pk]{display:none!important}

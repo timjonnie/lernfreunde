@@ -72,4 +72,9 @@ Hinweis: Mit dem kostenlosen ElevenLabs-Tarif erzeugte Clips sind nicht für kom
 Nutzung lizenziert. Vor dem Verkauf mit einem bezahlten Tarif neu erzeugen
 (Clips löschen und den Workflow erneut starten).
 
+## Store-Apps (Android, iOS)
+
+`android/` und `ios/` sind Capacitor-Projekte aus derselben Web-App. Nach Änderungen:
+`npm run cap:sync`. Bauen, Signieren und Veröffentlichen: [docs/STORES.md](docs/STORES.md).
+
 Fahrplan: [docs/ROADMAP.md](docs/ROADMAP.md)
